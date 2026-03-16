@@ -3,17 +3,10 @@
 ## Overview
 DraconicBtn is a Roblox GUI library for creating stylish, draggable buttons with toggle functionality. Buttons have two shapes (square/rectangle and circle) and can be modified through a simple API.
 
-## Features
-- 🎨 **Two Button Types**: Standard buttons and toggle switches
-- 🔄 **Shape Switching**: Hold button to reveal shape changer (○/▢)
-- 🖱️ **Draggable**: All buttons can be dragged anywhere on screen
-- 🎯 **Error Handling**: Clear error messages for invalid operations
-- 📦 **Global Access**: Buttons accessible via `getgenv().DraconicBtn`
-
 ## Installation
 ```lua
 -- Simply load the library script
-local DraconicBtn = loadstring(game:HttpGet("https://your-host.com/DraconicBtn.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Veroki/refs/heads/main/Module/DraconicLibBtn.lua"))()
 ```
 
 ## Quick Start
@@ -30,7 +23,7 @@ local GravityBtn = DraconicBtn:Button({
     end
 })
 
--- Create a toggle
+-- Create a Button toggle
 local FlyBtn = DraconicBtn:Toggle({
     Name = "FlyFlag",
     Text = "Fly",
@@ -44,7 +37,7 @@ local FlyBtn = DraconicBtn:Toggle({
 })
 
 -- Modify buttons using global access
-getgenv().DraconicBtn.GravityFlag:TitelSet("Anti-Gravity")
+DraconicBtn.GravityFlag:TitelSet("Anti-Gravity")
 getgenv().DraconicBtn.FlyFlag:ValueSet(true)
 ```
 
@@ -88,25 +81,25 @@ Creates a toggle switch button.
 #### `:TitelSet(newText)`
 Changes the button's text.
 ```lua
-getgenv().DraconicBtn.MyButton:TitelSet("New Text")
+DraconicBtn.MyButton:TitelSet("New Text")
 ```
 
 #### `:VisibleSet(isVisible)`
 Shows or hides the button.
 ```lua
-getgenv().DraconicBtn.MyButton:VisibleSet(false) -- Hide
+DraconicBtn.MyButton:VisibleSet(false) -- Hide
 ```
 
 #### `:PositionSet(xScale, xOffset, yScale, yOffset)`
 Moves the button to a new position.
 ```lua
-getgenv().DraconicBtn.MyButton:PositionSet(0.5, 0, 0.5, 0) -- Center
+DraconicBtn.MyButton:PositionSet(0.5, 0, 0.5, 0) -- Center
 ```
 
 #### `:UIScaleSet(newScale)`
 Resizes the button.
 ```lua
-getgenv().DraconicBtn.MyButton:UIScaleSet(2) -- Double size
+DraconicBtn.MyButton:UIScaleSet(2) -- Double size
 ```
 
 #### `:GetPosition()`
@@ -121,7 +114,7 @@ Returns the button's current text.
 #### `:Destroy()`
 Removes the button completely.
 ```lua
-getgenv().DraconicBtn.MyButton:Destroy()
+DraconicBtn.MyButton:Destroy()
 ```
 
 ### Toggle-Only Methods
@@ -129,7 +122,7 @@ getgenv().DraconicBtn.MyButton:Destroy()
 #### `:ValueSet(newValue)`
 Sets the toggle state (true = On, false = Off).
 ```lua
-getgenv().DraconicBtn.MyToggle:ValueSet(true) -- Turn on
+DraconicBtn.MyToggle:ValueSet(true) -- Turn on
 ```
 
 #### `:GetValue()`
@@ -139,11 +132,11 @@ Returns the current toggle state.
 
 ```lua
 -- This will error (Button doesn't have ValueSet)
-getgenv().DraconicBtn.MyButton:ValueSet(true) 
+DraconicBtn.MyButton:ValueSet(true) 
 -- Error: "DraconicBtn Error: ValueSet is not available for Button type. Use Toggle instead."
 
 -- This will error (wrong parameter type)
-getgenv().DraconicBtn.MyToggle:VisibleSet("true")
+DraconicBtn.MyToggle:VisibleSet("true")
 -- Error: "DraconicBtn Error: VisibleSet expects a boolean, got string"
 ```
 
@@ -167,8 +160,8 @@ DraconicBtn:Toggle({
 })
 
 -- Access them globally
-getgenv().DraconicBtn.GravityBtn:TitelSet("Anti-Gravity")
-getgenv().DraconicBtn.FlyToggle:ValueSet(true)
+DraconicBtn.GravityBtn:TitelSet("Anti-Gravity")
+DraconicBtn.FlyToggle:ValueSet(true)
 ```
 
 ### Dynamic Button Management
@@ -200,7 +193,7 @@ end
 - Hold a button for 0.5 seconds to reveal the shape changer
 - Clicking outside any button hides all shape changers
 - All methods include type checking and descriptive error messages
-- Buttons are stored in `getgenv().DraconicBtn` for global access
+- Buttons are stored in `DraconicBtn` for global access
 
 ## Error Messages Reference
 
@@ -213,6 +206,3 @@ end
 | "VisibleSet expects a boolean" | Passed non-boolean to VisibleSet |
 | "UIScaleSet expects a number" | Passed non-number to UIScaleSet |
 | "PositionSet xScale must be a number" | Invalid coordinate type |
-
-## License
-Free to use and modify. Created for the Roblox community.
