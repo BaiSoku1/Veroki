@@ -12,9 +12,6 @@ iconColor = "#FFFF00",
 return end
 getgenv().VerokiHub = true 
 
-do return end
-
-
 -- Perbaiki: Definisi fungsi yang hilang
 local checkcaller = checkcaller or function() return true end
 
