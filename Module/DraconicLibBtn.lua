@@ -1,3 +1,4 @@
+-- DraconicBtn.lua
 local DraconicBtn = {}
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -50,7 +51,7 @@ function DragSystem.MakeDraggable(MainFrame: GuiObject, DragFrame: GuiObject, Ca
 	local startPos = nil
 	local connection = nil
 	
-	function updatePosition(input)
+	local function updatePosition(input)
 		if not dragging or not dragStart then return end
 		
 		local delta = input.Position - dragStart
@@ -66,7 +67,7 @@ function DragSystem.MakeDraggable(MainFrame: GuiObject, DragFrame: GuiObject, Ca
 		end
 	end
 	
-	function onInputEnded()
+	local function onInputEnded()
 		if dragging then
 			dragging = false
 			dragInput = nil
@@ -83,7 +84,7 @@ function DragSystem.MakeDraggable(MainFrame: GuiObject, DragFrame: GuiObject, Ca
 		end
 	end
 	
-	function onInputChanged(_, input)
+	local function onInputChanged(_, input)
 		if input == dragInput and input.UserInputState == Enum.UserInputState.End then
 			onInputEnded()
 		end
@@ -134,7 +135,7 @@ function DragSystem.MakeDraggable(MainFrame: GuiObject, DragFrame: GuiObject, Ca
 	end
 end
 
-function setCircleMode(frame, actionButton, changeBtn)
+local function setCircleMode(frame, actionButton, changeBtn)
 	frame.Size = UDim2.new(0, 44, 0, 44)
 	frame.Position = UDim2.new(frame.Position.X.Scale, frame.Position.X.Offset, frame.Position.Y.Scale, frame.Position.Y.Offset)
 	
@@ -150,7 +151,7 @@ function setCircleMode(frame, actionButton, changeBtn)
 	changeBtn.Text = "▢"
 end
 
-function setSquareMode(frame, actionButton, changeBtn)
+local function setSquareMode(frame, actionButton, changeBtn)
 	frame.Size = UDim2.new(0.15000000596046448, 0, 0.10000000149011612, 0)
 	frame.Position = UDim2.new(frame.Position.X.Scale, frame.Position.X.Offset, frame.Position.Y.Scale, frame.Position.Y.Offset)
 	
@@ -166,7 +167,7 @@ function setSquareMode(frame, actionButton, changeBtn)
 	changeBtn.Text = "○"
 end
 
-function createBaseButton(config)
+local function createBaseButton(config)
 	local ButtonFrame = Instance.new("Frame")
 	ButtonFrame.Name = "FlagName"
 	ButtonFrame.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -221,7 +222,7 @@ function createBaseButton(config)
 	return ButtonFrame, ButtonAction
 end
 
-function safeCall(func, ...)
+local function safeCall(func, ...)
 	local success, result = pcall(func, ...)
 	if not success then
 		warn("[DraconicBtn Error]: " .. tostring(result))
@@ -660,3 +661,47 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 getgenv().DraconicBtn = DraconicBtn
+--[[
+-- Example usage
+local GravityButton = DraconicBtn:Button({
+	Name = "GravityFlag",
+	Text = "Gravity",
+	Position = "(0.425, -6, 0.45, -4)",
+	UiScale = 1,
+	Visible = true,
+	Callback = function()
+		print("Gravity button clicked!")
+	end,
+	ChangeCallback = function(isCircle)
+		print("Changed to:", isCircle and "circle" or "square")
+	end
+})
+
+local FlyButton = DraconicBtn:Toggle({
+	Name = "FlyFlag",
+	Text = "Fly",
+	Value = false,
+	Position = "(0.425, -93, 0.45, 13)",
+	UiScale = 1,
+	Visible = true,
+	Callback = function(state)
+		print("Fly toggle:", state)
+	end,
+	ChangeCallback = function(isCircle)
+		print("Changed to:", isCircle and "circle" or "square")
+	end
+})
+
+-- Using the FlagName syntax
+getgenv().DraconicBtn.GravityFlag:TitelSet("Anti-Gravity")
+getgenv().DraconicBtn.FlyFlag:TitelSet("Super Fly")
+getgenv().DraconicBtn.FlyFlag:ValueSet(true)
+getgenv().DraconicBtn.GravityFlag:UIScaleSet(1.5)
+getgenv().DraconicBtn.FlyFlag:PositionSet(0.5, 0, 0.5, 0)
+
+-- This will throw an error (Button doesn't have ValueSet)
+-- getgenv().DraconicBtn.GravityFlag:ValueSet(true) -- Uncomment to see error
+
+-- This will throw an error (wrong parameter type)
+-- getgenv().DraconicBtn.FlyFlag:VisibleSet("true") -- Uncomment to see error
+]]
