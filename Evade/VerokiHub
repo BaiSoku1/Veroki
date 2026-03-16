@@ -1,3 +1,17 @@
+if getgenv().VerokiHub then
+
+loadstring(game:HttpGet("https://darahub.pages.dev/Module/ToastNotification.lua"))()
+NotifyToast({
+title = "WARNING!",
+content = "Script Is Already Loaded, rejoin of you want to re-execute.",
+duration = 8,
+icon = "triangle-exclamation",
+iconColor = "#FFFF00",
+-- callback = function() end
+})
+return end
+getgenv().VerokiHub = true 
+
 do return end
 
 
