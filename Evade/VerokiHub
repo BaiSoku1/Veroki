@@ -1952,6 +1952,83 @@ end)
 MiscTab:AddInput("CarryDelay", {Title = "Carry Delay (s)",Description = "Set auto carry delay",Default = tostring(getgenv().AutoCarryDelay),Placeholder = "1",Numeric = true,Callback = function(val) local n = tonumber(val) if n and n > 0 then getgenv().AutoCarryDelay = n end end})
 MiscTab:AddInput("ReviveDelay", {Title = "Revive Delay (s)",Description = "Set auto revive delay",Default = tostring(getgenv().AutoReviveDelay),Placeholder = "1",Numeric = true,Callback = function(val) local n = tonumber(val) if n and n > 0 then getgenv().AutoReviveDelay = n end end})
 
+-- Map Voting Section di MiscTab
+MiscTab:AddSection("Map Voting")
+
+local selectedMapNumber = 1
+
+MiscTab:AddDropdown({
+    Name = "Select Map",
+    Options = {"Map 1", "Map 2", "Map 3", "Map 4"},
+    Default = 1,
+    Callback = function(Option)
+        if Option == "Map 1" then
+            selectedMapNumber = 1
+        elseif Option == "Map 2" then
+            selectedMapNumber = 2
+        elseif Option == "Map 3" then
+            selectedMapNumber = 3
+        elseif Option == "Map 4" then
+            selectedMapNumber = 4
+        end
+    end,
+})
+
+MiscTab:AddButton({
+    Name = "Vote Map",
+    Callback = function()
+        if fireVoteServer then
+            fireVoteServer(selectedMapNumber)
+            Fluent:Notify({
+                Title = "Map Voting",
+                Content = "Voted for Map " .. selectedMapNumber,
+                Duration = 2
+            })
+        else
+            Fluent:Notify({
+                Title = "Error",
+                Content = "fireVoteServer function not found!",
+                Duration = 3
+            })
+        end
+    end,
+})
+
+local voteConnection = nil
+local autoVoteEnabled = false
+
+MiscTab:AddToggle({
+    Name = "Auto Vote",
+    Default = false,
+    Callback = function(Value)
+        autoVoteEnabled = Value
+        if autoVoteEnabled then
+            if not voteConnection then
+                voteConnection = RunService.Heartbeat:Connect(function()
+                    if fireVoteServer then
+                        fireVoteServer(selectedMapNumber)
+                    end
+                end)
+            end
+            Fluent:Notify({
+                Title = "Auto Vote",
+                Content = "Auto vote enabled for Map " .. selectedMapNumber,
+                Duration = 2
+            })
+        else
+            if voteConnection then
+                voteConnection:Disconnect()
+                voteConnection = nil
+            end
+            Fluent:Notify({
+                Title = "Auto Vote",
+                Content = "Auto vote disabled",
+                Duration = 2
+            })
+        end
+    end,
+})
+
 local LP = Players.LocalPlayer
 local CURRENT_AVATAR = nil
 local ORIGINAL_DESC = nil
@@ -2174,8 +2251,6 @@ local isSwapped = false
 
 VisualTab:AddInput("CurrentCosmetics", {Title = "Current Cosmetics",Description = "Enter current cosmetic name",Default = "",Placeholder = "Enter current cosmetic name",Callback = function(v) cosmetic1 = v if not isSwapped then originalCosmetic1 = v end end})
 
-VisualTab:AddSection("Select", "apple")
-
 VisualTab:AddInput("SelectCosmetics", {Title = "Select Cosmetics",Description = "Enter cosmetic to swap with",Default = "ToxicInferno",Placeholder = "Enter cosmetic to swap with",Callback = function(v) cosmetic2 = v if not isSwapped then originalCosmetic2 = v end end})
 
 VisualTab:AddButton({Title = "Apply Cosmetics",Description = "Swap cosmetics",Callback = function()
@@ -2277,7 +2352,7 @@ local currentEmoteInputs = {}
 local selectEmoteInputs = {}
 local allEmotesList = {}
 
-for i = 1, 12 do
+for i = 1, 6 do
     currentEmotes[i] = ""
     selectEmotes[i] = ""
 end
@@ -2570,13 +2645,13 @@ function handleSingleRespawn()
                     replaceEmotesFrame()
                     break
                 end
-                task.wait(0.1)
+                task.wait(0)
             end
         end)
     end
 end
 
-for i = 1, 12 do
+for i = 1, 6 do
     VisualTab:AddInput("CurrentEmote" .. i, {Title = "Current Emote " .. i,Description = "Type emote name...",Default = currentEmotes[i],Placeholder = "Type emote name...",Callback = function(v)
         local cleaned = v:gsub("%s+", "")
         currentEmotes[i] = cleaned
@@ -2586,7 +2661,7 @@ end
 
 VisualTab:AddSection("Select", "apple")
 
-for i = 1, 12 do
+for i = 1, 6 do
     VisualTab:AddInput("SelectEmote" .. i, {Title = "Select Emote " .. i,Description = "Type emote name to replace with...",Default = selectEmotes[i],Placeholder = "Type emote name...",Callback = function(v)
         local cleaned = v:gsub("%s+", "")
         selectEmotes[i] = cleaned
@@ -2624,7 +2699,7 @@ end})
 
 VisualTab:AddButton({Title = "Apply Emote Mappings",Description = "Apply current emote mappings",Callback = function()
     local hasAnyEmote = false
-    for i = 1, 12 do
+    for i = 1, 6 do
         if currentEmotes[i] ~= "" or selectEmotes[i] ~= "" then hasAnyEmote = true break end
     end
     if not hasAnyEmote then return end
@@ -2649,7 +2724,7 @@ VisualTab:AddButton({Title = "Apply Emote Mappings",Description = "Apply current
     local missingEmoteSlots = {}
     local invalidEmoteSlots = {}
     local successfulSlots = {}
-    for i = 1, 12 do
+    for i = 1, 6 do
         if currentEmotes[i] ~= "" and selectEmotes[i] ~= "" then
             local currentValid, currentActual = isValidEmote(currentEmotes[i])
             local selectValid, selectActual = isValidEmote(selectEmotes[i])
@@ -2680,7 +2755,7 @@ end})
 
 VisualTab:AddButton({Title = "Reset All Emotes",Description = "Reset all emote mappings",Callback = function()
     if emoteFrame then restoreOriginalEmotes() end
-    for i = 1, 12 do currentEmotes[i] = "" selectEmotes[i] = "" end
+    for i = 1, 6 do currentEmotes[i] = "" selectEmotes[i] = "" end
     emoteNameCache = {}
     normalizedCache = {}
     cleanUpLastEmoteFrame()
