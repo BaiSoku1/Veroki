@@ -1957,25 +1957,28 @@ MiscTab:AddSection("Map Voting")
 
 local selectedMapNumber = 1
 
-MiscTab:AddDropdown({
-    Name = "Select Map",
-    Options = {"Map 1", "Map 2", "Map 3", "Map 4"},
+MiscTab:AddDropdown("MapSelection", {
+    Title = "Select Map",
+    Description = "Choose which map to vote for",
+    Values = {"Map 1", "Map 2", "Map 3", "Map 4"},
     Default = 1,
-    Callback = function(Option)
-        if Option == "Map 1" then
+    Callback = function(Value)
+        if Value == "Map 1" then
             selectedMapNumber = 1
-        elseif Option == "Map 2" then
+        elseif Value == "Map 2" then
             selectedMapNumber = 2
-        elseif Option == "Map 3" then
+        elseif Value == "Map 3" then
             selectedMapNumber = 3
-        elseif Option == "Map 4" then
+        elseif Value == "Map 4" then
             selectedMapNumber = 4
         end
+        print("Selected map:", selectedMapNumber) -- Untuk debugging
     end,
 })
 
 MiscTab:AddButton({
-    Name = "Vote Map",
+    Title = "Vote Map",
+    Description = "Vote for selected map",
     Callback = function()
         if fireVoteServer then
             fireVoteServer(selectedMapNumber)
@@ -1997,8 +2000,9 @@ MiscTab:AddButton({
 local voteConnection = nil
 local autoVoteEnabled = false
 
-MiscTab:AddToggle({
-    Name = "Auto Vote",
+MiscTab:AddToggle("AutoVote", {
+    Title = "Auto Vote",
+    Description = "Automatically vote for selected map",
     Default = false,
     Callback = function(Value)
         autoVoteEnabled = Value
