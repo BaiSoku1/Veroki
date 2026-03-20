@@ -318,6 +318,123 @@ LupenESPModule:Init(Fluent, Options)
 
 MainTab:AddToggle("LupenESPToggle", {Title = "ESP Lupen",Default = false,Callback = function(state) if state then LupenESPModule:Start() else LupenESPModule:Stop() end end})
 
+local AutoVoteConnection = nil
+local AutoVoteModeConnection = nil
+
+getgenv().featureStates.AutoVote = false
+getgenv().featureStates.AutoVoteMode = false
+getgenv().featureStates.SelectedMap = 1
+getgenv().featureStates.SelectedVoteMode = 1
+
+local function fireVoteServer(mapNumber)
+    local stats = workspace:FindFirstChild("Game") and workspace.Game:FindFirstChild("Stats")
+    if not stats or not stats:GetAttribute("Voting") then 
+        return 
+    end
+
+    local eventsFolder = ReplicatedStorage:FindFirstChild("Events")
+    if eventsFolder then
+        local playerFolder = eventsFolder:FindFirstChild("Player")
+        if playerFolder then
+            local voteEvent = playerFolder:FindFirstChild("Vote")
+            if voteEvent and voteEvent:IsA("RemoteEvent") then
+                voteEvent:FireServer(mapNumber)
+            end
+        end
+    end
+end
+
+local function startAutoVote()
+    if AutoVoteConnection then AutoVoteConnection:Disconnect() end
+    AutoVoteConnection = RunService.Heartbeat:Connect(function()
+        fireVoteServer(getgenv().featureStates.SelectedMap)
+    end)
+end
+
+local function stopAutoVote()
+    if AutoVoteConnection then
+        AutoVoteConnection:Disconnect()
+        AutoVoteConnection = nil
+    end
+end
+
+MainTab:AddDropdown("AutoVoteMap", {
+    Title = "Auto Vote Map",
+    Values = {"Map 1", "Map 2", "Map 3", "Map 4"},
+    Default = "Map 1",
+    Callback = function(value)
+        if value == "Map 1" then
+            getgenv().featureStates.SelectedMap = 1
+        elseif value == "Map 2" then
+            getgenv().featureStates.SelectedMap = 2
+        elseif value == "Map 3" then
+            getgenv().featureStates.SelectedMap = 3
+        elseif value == "Map 4" then
+            getgenv().featureStates.SelectedMap = 4
+        end
+    end
+})
+
+MainTab:AddToggle("AutoVoteToggle", {
+    Title = "Auto Vote",
+    Default = false,
+    Callback = function(state)
+        getgenv().featureStates.AutoVote = state
+        if state then
+            startAutoVote()
+        else
+            stopAutoVote()
+        end
+    end
+})
+
+MainTab:AddDropdown("AutoVoteMode", {
+    Title = "Vote Mode",
+    Values = {"Mode 1", "Mode 2", "Mode 3", "Mode 4"},
+    Default = "Mode 1",
+    Callback = function(value)
+        if value == "Mode 1" then
+            getgenv().featureStates.SelectedVoteMode = 1
+        elseif value == "Mode 2" then
+            getgenv().featureStates.SelectedVoteMode = 2
+        elseif value == "Mode 3" then
+            getgenv().featureStates.SelectedVoteMode = 3
+        elseif value == "Mode 4" then
+            getgenv().featureStates.SelectedVoteMode = 4
+        end
+    end
+})
+
+MainTab:AddToggle("AutoVoteModeToggle", {
+    Title = "Auto Vote Game Mode",
+    Default = false,
+    Callback = function(state)
+        getgenv().featureStates.AutoVoteMode = state
+        if state then
+            if AutoVoteModeConnection then AutoVoteModeConnection:Disconnect() end
+            AutoVoteModeConnection = RunService.Heartbeat:Connect(function()
+                local stats = workspace:FindFirstChild("Game") and workspace.Game:FindFirstChild("Stats")
+                if not stats or not stats:GetAttribute("Voting") then 
+                    return 
+                end
+
+                local voteEvent = ReplicatedStorage:FindFirstChild("Events") and 
+                                 ReplicatedStorage.Events:FindFirstChild("Player") and 
+                                 ReplicatedStorage.Events.Player:FindFirstChild("Vote")
+                
+                if voteEvent and voteEvent:IsA("RemoteEvent") then
+                    voteEvent:FireServer(getgenv().featureStates.SelectedVoteMode, true)
+                end
+            end)
+        else
+            if AutoVoteModeConnection then
+                AutoVoteModeConnection:Disconnect()
+                AutoVoteModeConnection = nil
+            end
+        end
+    end
+})
+
 IsOnMobile = false
 xpcall(function()
 IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform()) ~= nil
