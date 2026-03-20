@@ -318,6 +318,7 @@ LupenESPModule:Init(Fluent, Options)
 
 MainTab:AddToggle("LupenESPToggle", {Title = "ESP Lupen",Default = false,Callback = function(state) if state then LupenESPModule:Start() else LupenESPModule:Stop() end end})
 
+-- auto vote
 local AutoVoteConnection = nil
 local AutoVoteModeConnection = nil
 
