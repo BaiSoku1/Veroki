@@ -2174,8 +2174,6 @@ local isSwapped = false
 
 VisualTab:AddInput("CurrentCosmetics", {Title = "Current Cosmetics",Description = "Enter current cosmetic name",Default = "",Placeholder = "Enter current cosmetic name",Callback = function(v) cosmetic1 = v if not isSwapped then originalCosmetic1 = v end end})
 
-VisualTab:AddSection("Select", "apple")
-
 VisualTab:AddInput("SelectCosmetics", {Title = "Select Cosmetics",Description = "Enter cosmetic to swap with",Default = "ToxicInferno",Placeholder = "Enter cosmetic to swap with",Callback = function(v) cosmetic2 = v if not isSwapped then originalCosmetic2 = v end end})
 
 VisualTab:AddButton({Title = "Apply Cosmetics",Description = "Swap cosmetics",Callback = function()
@@ -2264,6 +2262,80 @@ VisualTab:AddButton({Title = "Reset Cosmetics",Description = "Reset swapped cosm
 end})
 
 VisualTab:AddSection("Emote visual", "apple")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local EmotesFolder = ReplicatedStorage:WaitForChild("Items"):WaitForChild("Emotes")
+
+-- storage
+local currentInputs = {}
+local selectInputs = {}
+local originalNames = {}
+
+-- save original names (biar bisa reset)
+for _, emote in pairs(EmotesFolder:GetChildren()) do
+    originalNames[emote] = emote.Name
+end
+
+-- UI Elements Setup
+for i = 1, 6 do
+    VisualTab:AddInput("CurrentEmote" .. i, {
+        Title = "Current Emote " .. i,
+        Description = "Type emote name...",
+        Default = "",
+        Placeholder = "Type emote name...",
+        Callback = function(v)
+            currentInputs[i] = v
+        end
+    })
+end
+
+for i = 1, 6 do
+    VisualTab:AddInput("SelectEmote" .. i, {
+        Title = "Select Emote " .. i,
+        Description = "Type emote name to replace with...",
+        Default = "",
+        Placeholder = "Type emote name...",
+        Callback = function(v)
+            selectInputs[i] = v
+        end
+    })
+end
+
+-- APPLY LOGIC
+VisualTab:AddButton({
+    Title = "Apply Emote Mappings",
+    Description = "Apply current emote mappings",
+    Callback = function()
+        for i = 1, 6 do
+            local currentName = currentInputs[i]
+            local newName = selectInputs[i]
+
+            if currentName and newName and currentName ~= "" and newName ~= "" then
+                local emote = EmotesFolder:FindFirstChild(currentName)
+
+                if emote then
+                    emote.Name = newName
+                end
+            end
+        end
+    end
+})
+
+-- RESET LOGIC
+VisualTab:AddButton({
+    Title = "Reset All Emotes",
+    Description = "Reset all emote mappings",
+    Callback = function()
+        for emote, originalName in pairs(originalNames) do
+            if emote and emote.Parent then
+                emote.Name = originalName
+            end
+        end
+    end
+})
+
+VisualTab:AddSection("emote changer v2", "apple")
 
 local emoteModelScript = nil
 local originalEmoteData = {}
