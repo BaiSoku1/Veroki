@@ -79,7 +79,7 @@ local function levenshtein(a, b)
     return matrix[m][n]
 end
 
-local Window = Fluent:CreateWindow({Title = "Veroki Hub",SubTitle = "by Baisoku/Syfta",TabWidth = 160,Size = UDim2.fromOffset(580, 460),Acrylic = true,Theme = "Dark",MinimizeKey = Enum.KeyCode.LeftControl})
+local Window = Fluent:CreateWindow({Title = "Veroki Hub",SubTitle = "Overhaul by Baisoku/Syfta and Dara",TabWidth = 160,Size = UDim2.fromOffset(580, 460),Acrylic = true,Theme = "Dark",MinimizeKey = Enum.KeyCode.LeftControl})
 local FloatingButton = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Veroki/refs/heads/main/Evade/flot",true))() FloatingButton.init(Window)
 
 local executor = identifyexecutor()
@@ -2211,9 +2211,15 @@ respawnConnection = LocalPlayer.CharacterAdded:Connect(function(newChar)
     if featureStates.AutoSelfRevive then setupAutoRevive(newChar) end
 end)
 
-MiscTab:AddDropdown("RespawnMethod", {Title = "Respawn Method",Description = "Choose respawn method",Values = {"Spawnpoint", "Revive"},Default = "Spawnpoint",Callback = function(value) featureStates.SelfReviveMethod = value end})    
+MiscTab:AddToggle("ShowRespawnFlag", {
+    Title = "Show Respawn gui", 
+    Default = false, 
+    Callback = function(state) 
+        DraconicBtn.RespawnFlag:VisibleSet(state)
+    end
+})
 
-MiscTab:AddButton({Title = "Respawn",Description = "Manually respawn",Callback = function() doRevive(LocalPlayer.Character) end})    
+MiscTab:AddDropdown("RespawnMethod", {Title = "Respawn Method",Description = "Choose respawn method",Values = {"Spawnpoint", "Revive"},Default = "Spawnpoint",Callback = function(value) featureStates.SelfReviveMethod = value end})    
 
 MiscTab:AddToggle("AutoSelfRevive", {Title = "Auto Self Revive",Description = "Automatically revive when downed",Default = false,Callback = function(state)
     featureStates.AutoSelfRevive = state
@@ -3793,6 +3799,22 @@ DraconicBtn:Toggle({Name = "FrontJumpFlag",Text = "Front Jump",Value = false,Pos
 end})
 
 DraconicBtn:Button({Name = "LagFlag",Text = "Lag Switch",Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function() triggerLagSwitch() end})
+
+DraconicBtn:Button({
+    Name = "RespawnFlag",
+    Text = "Respawn",
+    Position = "(0.5, -110, 0, 120)",
+    UiScale = 1,
+    Visible = false,
+    Callback = function() 
+        local char = LocalPlayer.Character
+        if char and char:GetAttribute("Downed") then
+            pcall(function() 
+                ReplicatedStorage.Events.Player.ChangePlayerMode:FireServer(true) 
+            end)
+        end
+    end
+})
 
 DraconicBtn:Toggle({Name = "AutoCarryFlag",Text = "Auto Carry",Value = false,Position = "(0.5, -110, 0, 50)",UiScale = 1,Visible = false,Callback = function(state) getgenv().AutoCarryEnabled = state end})
 
