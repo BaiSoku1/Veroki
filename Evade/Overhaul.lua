@@ -59,6 +59,8 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
+local Lighting = game:GetService("Lighting")
+
 
 local function levenshtein(a, b)
     a, b = a:lower(), b:lower()
@@ -1450,9 +1452,16 @@ local HeartbeatConnection = nil
 local SlideEnabled = false
 local SlideCharacterAddedConnection = nil
 
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
 local function RefreshCachedTables()
     local newCachedTables = {}
-    for _, obj in ipairs(getgc(true)) do
+    local gc = getgc(true)
+    if not gc then return end
+    
+    for _, obj in ipairs(gc) do
         if type(obj) == "table" and rawget(obj, "Friction") and rawget(obj, "Speed") then
             table.insert(newCachedTables, obj)
         end
@@ -1471,12 +1480,20 @@ local function UpdatePlayerModel()
 end
 
 local function SetFriction(value)
-    if #CachedTables == 0 then RefreshCachedTables() end
-    for _, t in ipairs(CachedTables) do t.Friction = value end
+    if #CachedTables == 0 then 
+        RefreshCachedTables() 
+    end
+    for _, t in ipairs(CachedTables) do 
+        t.Friction = value 
+    end
 end
 
 local function OnHeartbeat()
-    if not PlrModel then SetFriction(5) return end
+    if not PlrModel then 
+        SetFriction(5) 
+        return 
+    end
+    
     local currentState = PlrModel:GetAttribute("State")
     if currentState == "Slide" then
         PlrModel:SetAttribute("State", "EmotingSlide")
@@ -1488,29 +1505,68 @@ local function OnHeartbeat()
 end
 
 local function StartInfiniteSlide()
+    if SlideEnabled then return end
     SlideEnabled = true
+    
     RefreshCachedTables()
     UpdatePlayerModel()
-    if HeartbeatConnection then HeartbeatConnection:Disconnect() end
+    
+    if HeartbeatConnection then 
+        HeartbeatConnection:Disconnect() 
+    end
     HeartbeatConnection = RunService.Heartbeat:Connect(OnHeartbeat)
-    if SlideCharacterAddedConnection then SlideCharacterAddedConnection:Disconnect() end
+    
+    if SlideCharacterAddedConnection then 
+        SlideCharacterAddedConnection:Disconnect() 
+    end
     SlideCharacterAddedConnection = LocalPlayer.CharacterAdded:Connect(function()
         task.wait(1)
         RefreshCachedTables()
         UpdatePlayerModel()
     end)
-    Fluent:Notify({Title = "Infinite Slide",Content = "Infinite slide enabled",Duration = 2})
+    
+    Fluent:Notify({
+        Title = "Infinite Slide",
+        Content = "Infinite slide enabled",
+        Duration = 2
+    })
 end
 
 local function StopInfiniteSlide()
+    if not SlideEnabled then return end
     SlideEnabled = false
+    
     SetFriction(5)
-    if HeartbeatConnection then HeartbeatConnection:Disconnect() HeartbeatConnection = nil end
-    if SlideCharacterAddedConnection then SlideCharacterAddedConnection:Disconnect() SlideCharacterAddedConnection = nil end
+    
+    if HeartbeatConnection then 
+        HeartbeatConnection:Disconnect() 
+        HeartbeatConnection = nil 
+    end
+    
+    if SlideCharacterAddedConnection then 
+        SlideCharacterAddedConnection:Disconnect() 
+        SlideCharacterAddedConnection = nil 
+    end
+    
     PlrModel = nil
     CachedTables = {}
-    Fluent:Notify({Title = "Infinite Slide",Content = "Infinite slide disabled",Duration = 2})
+    
+    Fluent:Notify({
+        Title = "Infinite Slide",
+        Content = "Infinite slide disabled",
+        Duration = 2
+    })
 end
+
+
+-- Toggle untuk menampilkan/menyembunyikan button Infinite Slide
+MiscTab:AddToggle("ShowInfiniteSlideBtn", {
+    Title = "Show Infinite Slide Button",
+    Default = false,
+    Callback = function(state)
+        DraconicBtn.InfiniteSlideFlag:VisibleSet(state)
+    end
+})
 
 MiscTab:AddToggle("InfiniteSlide", {Title = "Infinite Slide",Description = "Enable infinite slide mode",Default = false,Callback = function(state) if state then StartInfiniteSlide() else StopInfiniteSlide() end end})
 
@@ -3063,139 +3119,489 @@ end})
 if LocalPlayer.Character then setupBounce(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(setupBounce)
 
-ExtensionTab:AddButton({Title = "Clear Invis Walls",Description = "Remove invisible walls",Callback = function()
-    local gameFolder = workspace:FindFirstChild("Game")
-    if not gameFolder then return end
-    local mapFolder = gameFolder:FindFirstChild("Map")
-    if not mapFolder then return end
-    local invisPartsFolder = mapFolder:FindFirstChild("InvisParts")
-    if not invisPartsFolder then return end
-    for _, obj in ipairs(invisPartsFolder:GetDescendants()) do
-        if obj:IsA("BasePart") then obj.CanCollide = false end
+-- Init global table biar ga error
+getgenv().featureStates = getgenv().featureStates or {}
+
+local function safeNotify(title, content)
+    if Fluent and Fluent.Notify then
+        Fluent:Notify({Title = title, Content = content, Duration = 3})
     end
-end})
+end
 
-ExtensionTab:AddButton({Title = "Lower Chunks",Description = "Reduces the streaming radius for performance improvement",Callback = function() workspace.StreamingMinRadius = 200 workspace.StreamingTargetRadius = 500 end})
-
-ExtensionTab:AddButton({Title = "Disable VSync",Description = "Disables vertical sync to allow higher FPS",Callback = function() setfpscap(9999) end})
-
-ExtensionTab:AddButton({Title = "Set FPS Cap Max",Description = "Sets the FPS cap to a very high value",Callback = function() setfpscap(99999) end})
-
-ExtensionTab:AddButton({Title = "Hide Skybox",Description = "Removes the skybox for better performance",Callback = function() game.Lighting.Sky = nil end})
-
-ExtensionTab:AddButton({Title = "Disable Shadows",Description = "Disables all shadows in the workspace",Callback = function()
-    for _, part in pairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") then part.CastShadow = false end
+local function safeFPSCap(v)
+    if setfpscap then
+        setfpscap(v)
     end
-end})
+end
 
-ExtensionTab:AddButton({Title = "Set Low Graphics",Description = "Sets the rendering quality to low",Callback = function() settings().Rendering.QualityLevel = 1 end})
+-- 1
+ExtensionTab:AddButton({
+    Title = "Clear Invis Walls",
+    Description = "Remove invisible walls",
+    Callback = function()
+        local invis = workspace:FindFirstChild("Game")
+        invis = invis and invis:FindFirstChild("Map")
+        invis = invis and invis:FindFirstChild("InvisParts")
+        if not invis then return end
 
-ExtensionTab:AddButton({Title = "Disable Particles",Description = "Removes all particle effects from the game",Callback = function()
-    for _, particle in pairs(workspace:GetDescendants()) do
-        if particle:IsA("ParticleEmitter") then particle:Destroy() end
-    end
-end})
-
-ExtensionTab:AddButton({Title = "Night",Description = "Sets the time to night (00:00)",Callback = function() game.Lighting.TimeOfDay = "00:00:00" end})
-
-ExtensionTab:AddButton({Title = "Day",Description = "Sets the time to morning (08:00)",Callback = function() game.Lighting.TimeOfDay = "08:00:00" end})
-
-ExtensionTab:AddButton({Title = "Anti Fog",Description = "Removes fog for better visibility",Callback = function()
-    local L = game.Lighting
-    L.FogStart = 1e5
-    L.FogEnd = 1e6
-end})
-
-ExtensionTab:AddButton({Title = "Low Poly Mode",Description = "Converts meshes to low-poly for performance",Callback = function()
-    for _, p in pairs(workspace:GetDescendants()) do
-        if p:IsA("MeshPart") or p:IsA("UnionOperation") then
-            p.Material = Enum.Material.Plastic
-            p.RenderFidelity = Enum.RenderFidelity.Performance
-        end
-    end
-end})
-
-ExtensionTab:AddButton({Title = "Disable Simplify Lighting",Description = "Disables lighting simplifications for custom settings",Callback = function()
-    local L = game.Lighting
-    L.Technology = Enum.Technology.Compatibility
-    L.ShadowSoftness = 0
-    L.EnvironmentDiffuseScale = 0
-    L.EnvironmentSpecularScale = 0
-end})
-
-ExtensionTab:AddButton({Title = "Hide Useless Chunks",Description = "Reduces streaming of unnecessary chunks",Callback = function() workspace.StreamingMinRadius = 0 workspace.StreamingTargetRadius = 500 end})
-
-ExtensionTab:AddButton({Title = "Reduce Anti-Aliasing",Description = "Reduces anti-aliasing for performance",Callback = function() game:GetService("Rendering"):SetCore("AntiAliasing", Enum.AntiAliasingLevel.Two) end})
-
-ExtensionTab:AddButton({Title = "Low Quality",Description = "Set all graphics to low quality",Callback = function()
-    local ToDisable = {Textures = true,VisualEffects = true,Parts = true,Particles = true,Sky = true}
-    for _, v in next, game:GetDescendants() do
-        if ToDisable.Parts then
-            if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
-        end
-        if ToDisable.Particles then
-            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Explosion") or v:IsA("Sparkles") or v:IsA("Fire") then v.Enabled = false end
-        end
-        if ToDisable.VisualEffects then
-            if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("SunRaysEffect") then v.Enabled = false end
-        end
-        if ToDisable.Textures then
-            if v:IsA("Decal") or v:IsA("Texture") then v.Texture = "" end
-        end
-        if ToDisable.Sky then
-            if v:IsA("Sky") then v.Parent = nil end
-        end
-    end
-    if Fluent and Fluent.Notify then Fluent:Notify({Title = "Low Quality",Content = "Graphics settings optimized for performance",Duration = 3}) end
-end})
-
-ExtensionTab:AddButton({Title = "Remove Texture",Description = "Remove all textures",Callback = function()
-    for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("Part") or part:IsA("MeshPart") or part:IsA("UnionOperation") or part:IsA("WedgePart") or part:IsA("CornerWedgePart") then
-            if part:IsA("Part") then part.Material = Enum.Material.SmoothPlastic end
-            if part:FindFirstChildWhichIsA("Texture") then
-                local texture = part:FindFirstChildWhichIsA("Texture")
-                texture.Texture = "rbxassetid://0"
-            end
-            if part:FindFirstChildWhichIsA("Decal") then
-                local decal = part:FindFirstChildWhichIsA("Decal")
-                decal.Texture = "rbxassetid://0"
+        for _, obj in ipairs(invis:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.CanCollide = false
             end
         end
     end
-    if Fluent and Fluent.Notify then Fluent:Notify({Title = "Remove Texture",Content = "All textures have been removed",Duration = 3}) end
-end})
+})
 
-ExtensionTab:AddToggle("RemoveFog", {Title = "Remove fog",Description = "Toggle fog removal",Default = false,Callback = function(state)
-    local Lighting = game:GetService("Lighting")
-    if state then
-        getgenv().featureStates.originalFogEnd = Lighting.FogEnd
-        getgenv().featureStates.originalAtmospheres = {}
-        for _, atmosphere in ipairs(Lighting:GetChildren()) do
-            if atmosphere:IsA("Atmosphere") then table.insert(getgenv().featureStates.originalAtmospheres, atmosphere:Clone()) end
+-- 2
+ExtensionTab:AddButton({
+    Title = "Lower Chunks",
+    Description = "Reduce streaming radius",
+    Callback = function()
+        workspace.StreamingMinRadius = 200
+        workspace.StreamingTargetRadius = 500
+    end
+})
+
+-- 3
+ExtensionTab:AddButton({
+    Title = "Disable VSync",
+    Callback = function()
+        safeFPSCap(9999)
+    end
+})
+
+-- 4
+ExtensionTab:AddButton({
+    Title = "FPS Max",
+    Callback = function()
+        safeFPSCap(99999)
+    end
+})
+
+-- 5
+ExtensionTab:AddButton({
+    Title = "Hide Skybox",
+    Callback = function()
+        local sky = game.Lighting:FindFirstChildOfClass("Sky")
+        if sky then sky:Destroy() end
+    end
+})
+
+-- 6
+ExtensionTab:AddButton({
+    Title = "Disable Shadows",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CastShadow = false
+            end
         end
+    end
+})
+
+-- 7
+ExtensionTab:AddButton({
+    Title = "Low Graphics",
+    Callback = function()
+        pcall(function()
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        end)
+    end
+})
+
+-- 8
+ExtensionTab:AddButton({
+    Title = "Remove Particles",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") then
+                v.Enabled = false
+            end
+        end
+    end
+})
+
+-- 9
+ExtensionTab:AddButton({
+    Title = "Night",
+    Callback = function()
+        game.Lighting.TimeOfDay = "00:00:00"
+    end
+})
+
+-- 10
+ExtensionTab:AddButton({
+    Title = "Day",
+    Callback = function()
+        game.Lighting.TimeOfDay = "12:00:00"
+    end
+})
+
+-- 11
+ExtensionTab:AddButton({
+    Title = "Anti Fog",
+    Callback = function()
+        local L = game.Lighting
+        L.FogStart = 1e5
+        L.FogEnd = 1e6
+    end
+})
+
+-- 12
+ExtensionTab:AddButton({
+    Title = "Low Poly Mode",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("MeshPart") or v:IsA("UnionOperation") then
+                v.Material = Enum.Material.Plastic
+                pcall(function()
+                    v.RenderFidelity = Enum.RenderFidelity.Performance
+                end)
+            end
+        end
+    end
+})
+
+-- 13
+ExtensionTab:AddButton({
+    Title = "Compatibility Lighting",
+    Callback = function()
+        local L = game.Lighting
+        L.Technology = Enum.Technology.Compatibility
+        L.ShadowSoftness = 0
+    end
+})
+
+-- 14
+ExtensionTab:AddButton({
+    Title = "Hide Chunks",
+    Callback = function()
+        workspace.StreamingMinRadius = 0
+        workspace.StreamingTargetRadius = 300
+    end
+})
+
+-- 15 (FIX ERROR DI SINI)
+ExtensionTab:AddButton({
+    Title = "Reduce AA",
+    Callback = function()
+        -- Removed broken Rendering service
+        safeNotify("Info", "Anti-Aliasing control not supported")
+    end
+})
+
+-- 16
+ExtensionTab:AddButton({
+    Title = "Remove Textures",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Decal") or v:IsA("Texture") then
+                v.Texture = ""
+            end
+        end
+    end
+})
+
+-- 17
+ExtensionTab:AddButton({
+    Title = "Disable Effects",
+    Callback = function()
+        for _, v in pairs(game.Lighting:GetDescendants()) do
+            if v:IsA("PostEffect") then
+                v.Enabled = false
+            end
+        end
+    end
+})
+
+-- 18
+ExtensionTab:AddButton({
+    Title = "Smooth Plastic All",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end
+    end
+})
+
+-- 19
+ExtensionTab:AddButton({
+    Title = "Remove Grass",
+    Callback = function()
+        workspace.Terrain.Decoration = false
+    end
+})
+
+-- 20
+ExtensionTab:AddButton({
+    Title = "FullBright",
+    Callback = function()
+        local L = game.Lighting
+        L.Brightness = 2
+        L.ClockTime = 12
+        L.FogEnd = 100000
+    end
+})
+
+-- 21
+ExtensionTab:AddButton({
+    Title = "Reset Lighting",
+    Callback = function()
+        game.Lighting:ClearAllChildren()
+    end
+})
+
+-- 22
+ExtensionTab:AddButton({
+    Title = "Destroy Sounds",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Sound") then
+                v:Destroy()
+            end
+        end
+    end
+})
+
+-- 23
+ExtensionTab:AddButton({
+    Title = "Anchor All",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Anchored = true
+            end
+        end
+    end
+})
+
+-- 24
+ExtensionTab:AddButton({
+    Title = "Unanchor All",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Anchored = false
+            end
+        end
+    end
+})
+
+-- 25
+ExtensionTab:AddButton({
+    Title = "Remove Fog Toggle",
+    Callback = function()
+        local Lighting = game:GetService("Lighting")
         Lighting.FogEnd = 1000000
         for _, v in pairs(Lighting:GetDescendants()) do
-            if v:IsA("Atmosphere") then v:Destroy() end
-        end
-        if Fluent and Fluent.Notify then Fluent:Notify({Title = "Remove Fog",Content = "Fog has been removed",Duration = 2}) end
-    else
-        if getgenv().featureStates and getgenv().featureStates.originalFogEnd then Lighting.FogEnd = getgenv().featureStates.originalFogEnd end
-        if getgenv().featureStates and getgenv().featureStates.originalAtmospheres then
-            for _, atmosphere in ipairs(getgenv().featureStates.originalAtmospheres) do
-                if not atmosphere.Parent then
-                    local newAtmosphere = Instance.new("Atmosphere")
-                    for _, prop in pairs({"Density", "Offset", "Color", "Decay", "Glare", "Haze"}) do
-                        if atmosphere[prop] then newAtmosphere[prop] = atmosphere[prop] end
-                    end
-                    newAtmosphere.Parent = Lighting
-                end
+            if v:IsA("Atmosphere") then
+                v:Destroy()
             end
         end
-        if Fluent and Fluent.Notify then Fluent:Notify({Title = "Remove Fog",Content = "Fog has been restored",Duration = 2}) end
+        safeNotify("Fog", "Fog removed")
     end
-end})
+})
+
+-- 26
+ExtensionTab:AddButton({
+    Title = "Disable Lighting Effects",
+    Callback = function()
+        for _, v in pairs(game:GetService("Lighting"):GetChildren()) do
+            if v:IsA("BloomEffect") 
+            or v:IsA("BlurEffect") 
+            or v:IsA("ColorCorrectionEffect") 
+            or v:IsA("SunRaysEffect") 
+            or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+    end
+})
+
+-- 27
+ExtensionTab:AddButton({
+    Title = "Remove Decals",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Decal") then
+                v:Destroy()
+            end
+        end
+    end
+})
+
+-- 28
+ExtensionTab:AddButton({
+    Title = "Optimize Meshes",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("MeshPart") then
+                pcall(function()
+                    v.RenderFidelity = Enum.RenderFidelity.Performance
+                end)
+            end
+        end
+    end
+})
+
+-- 29
+ExtensionTab:AddButton({
+    Title = "Disable 3D Rendering",
+    Callback = function()
+        if game:GetService("RunService"):IsClient() then
+            game:GetService("RunService"):Set3dRenderingEnabled(false)
+        end
+    end
+})
+
+-- 30
+ExtensionTab:AddButton({
+    Title = "Enable 3D Rendering",
+    Callback = function()
+        if game:GetService("RunService"):IsClient() then
+            game:GetService("RunService"):Set3dRenderingEnabled(true)
+        end
+    end
+})
+
+-- 31
+ExtensionTab:AddButton({
+    Title = "Disable Animations",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Animator") then
+                v:Destroy()
+            end
+        end
+    end
+})
+
+-- 32
+ExtensionTab:AddButton({
+    Title = "Stop All Sounds",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Sound") then
+                v:Stop()
+            end
+        end
+    end
+})
+
+-- 33
+ExtensionTab:AddButton({
+    Title = "Mute Sounds",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Sound") then
+                v.Volume = 0
+            end
+        end
+    end
+})
+
+-- 34
+ExtensionTab:AddButton({
+    Title = "Max Zoom Out",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player and player.CameraMaxZoomDistance then
+            player.CameraMaxZoomDistance = 1000
+        end
+    end
+})
+
+-- 35
+ExtensionTab:AddButton({
+    Title = "Min Zoom (First Person)",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player and player.CameraMaxZoomDistance then
+            player.CameraMaxZoomDistance = 0.5
+        end
+    end
+})
+
+-- 36
+ExtensionTab:AddButton({
+    Title = "Reset Camera Zoom",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player then
+            player.CameraMaxZoomDistance = 128
+            player.CameraMinZoomDistance = 0.5
+        end
+    end
+})
+
+-- 37
+ExtensionTab:AddButton({
+    Title = "FPS Boost Extreme",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v:Destroy()
+            elseif v:IsA("ParticleEmitter") then
+                v.Enabled = false
+            end
+        end
+
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1e6
+
+        safeFPSCap(99999)
+        safeNotify("FPS Boost", "Extreme optimization applied")
+    end
+})
+
+-- 38
+ExtensionTab:AddButton({
+    Title = "Restore Materials",
+    Callback = function()
+        safeNotify("Info", "Material restore not supported (need cache system)")
+    end
+})
+
+-- 39
+ExtensionTab:AddButton({
+    Title = "Simple Graphics Mode",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Color = Color3.fromRGB(128,128,128)
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end
+    end
+})
+
+-- 40
+ExtensionTab:AddButton({
+    Title = "Ultra Low Mode",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Transparency = 0.3
+                v.Material = Enum.Material.SmoothPlastic
+            elseif v:IsA("ParticleEmitter") then
+                v.Enabled = false
+            elseif v:IsA("Trail") then
+                v.Enabled = false
+            end
+        end
+
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1e6
+
+        safeNotify("Ultra Low", "Maximum performance mode enabled")
+    end
+})
 
 SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
@@ -3203,6 +3609,22 @@ InterfaceManager:SetFolder("VerokiHub")
 SaveManager:SetFolder("VerokiHub/Configs")
 InterfaceManager:BuildInterfaceSection(ConfigTab)
 SaveManager:BuildConfigSection(ConfigTab)
+
+DraconicBtn:Toggle({
+    Name = "InfiniteSlideFlag",
+    Text = "Infinite Slide",
+    Value = false,
+    Position = "(0.5, -110, 0, 10)",
+    UiScale = 1,
+    Visible = false,
+    Callback = function(state)
+        if state then
+            StartInfiniteSlide()
+        else
+            StopInfiniteSlide()
+        end
+    end
+})
 
 DraconicBtn:Toggle({Name = "GravityFlag",Text = "Gravity",Value = false,Position = "(0.5, -110, 0, 60)",UiScale = 1,Visible = false,Callback = function(state)
     getgenv().GravityEnabled = state
