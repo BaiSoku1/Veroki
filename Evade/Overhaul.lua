@@ -1733,6 +1733,129 @@ end})
 
 MiscTab:AddToggle("ShowGravityBtn", {Title = "Show Gravity Button", Default = false, Callback = function(state) DraconicBtn.GravityFlag:VisibleSet(state) end})
 
+MiscTab:AddSection("AutoJump", "apple")
+
+-- Define the toggle for Auto Jump
+MiscTab:AddToggle("ShowAutoJumpBtn", {
+    Title = "Show Auto Jump Button", 
+    Default = false, 
+    Callback = function(state) 
+        DraconicBtn.AutoJumpFlag:VisibleSet(state) 
+    end
+})
+
+-- Define the toggle for Auto BHop (Auto Jump)
+MiscTab:AddToggle("AutoBHop", {
+    Title = "Auto BHop", 
+    Default = false, 
+    Callback = function(state)
+        getgenv().AutoJumpEnabled = state
+    end
+})
+
+-- Define the toggle for Hold Jump
+MiscTab:AddToggle("HoldJump", {
+    Title = "Hold Jump", 
+    Default = false, 
+    Callback = function(state)
+        getgenv().HoldJumpEnabled = state
+    end
+})
+
+local bhopHoldActive = false
+
+-- PC/Mobile keyboard input for Hold Jump
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+    if input.KeyCode == Enum.KeyCode.Space and getgenv().HoldJumpEnabled then
+        bhopHoldActive = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then
+        bhopHoldActive = false
+    end
+end)
+
+-- Mobile touch button setup for Hold Jump
+local function setupJumpButton()
+    local isMobile = UserInputService.TouchEnabled
+    if isMobile then
+        task.spawn(function()
+            task.wait(2)
+            local success, err = pcall(function()
+                local touchGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("TouchGui")
+                if not touchGui then return end
+                local touchControlFrame = touchGui:WaitForChild("TouchControlFrame")
+                if not touchControlFrame then return end
+                local jumpButton = touchControlFrame:WaitForChild("JumpButton")
+                if not jumpButton then return end
+                jumpButton.MouseButton1Down:Connect(function()
+                    if getgenv().HoldJumpEnabled then
+                        bhopHoldActive = true
+                    end
+                end)
+                jumpButton.MouseButton1Up:Connect(function()
+                    bhopHoldActive = false
+                end)
+            end)
+            if not success then
+                print("Mobile jump button setup failed:", err)
+            end
+        end)
+    end
+end
+
+setupJumpButton()
+
+-- Auto BHop loop (works with AutoJumpEnabled toggle)
+task.spawn(function()
+    local RunService = game:GetService("RunService")
+    local rayDistance = 4 -- Distance from ground to trigger jump
+    
+    while true do
+        RunService.Heartbeat:Wait()
+        
+        -- Auto BHop (continuous jumping)
+        if getgenv().AutoJumpEnabled then
+            local char = game.Players.LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if humanoid and root and humanoid.Health > 0 then
+                    local rayOrigin = root.Position
+                    local rayDir = Vector3.new(0, -rayDistance, 0)
+                    local ray = Ray.new(rayOrigin, rayDir)
+                    local hit = workspace:FindPartOnRay(ray, char)
+                    if hit then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end
+        end
+        
+        -- Hold Jump (jump while holding spacebar/touch)
+        if getgenv().HoldJumpEnabled and bhopHoldActive then
+            local char = game.Players.LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if humanoid and root and humanoid.Health > 0 then
+                    -- Check if on ground before jumping
+                    local rayOrigin = root.Position
+                    local rayDir = Vector3.new(0, -rayDistance, 0)
+                    local ray = Ray.new(rayOrigin, rayDir)
+                    local hit = workspace:FindPartOnRay(ray, char)
+                    if hit then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+                end
+            end
+        end
+    end
+end)
+
 MiscTab:AddSection("BackJump", "apple")
 
 getgenv().BackJumpEnabled = false
@@ -3630,6 +3753,19 @@ DraconicBtn:Toggle({Name = "GravityFlag",Text = "Gravity",Value = false,Position
     getgenv().GravityEnabled = state
     workspace.Gravity = state and getgenv().GravityValue or 196.2
 end})
+
+
+DraconicBtn:Toggle({
+    Name = "AutoJumpFlag",
+    Text = "Auto Jump", 
+    Value = false,
+    Position = "(0.5, -110, 0, 10)",
+    UiScale = 1,
+    Visible = false,
+    Callback = function(state)
+        getgenv().AutoJumpEnabled = state
+    end
+})
 
 DraconicBtn:Toggle({Name = "BackJumpFlag",Text = "Back Jump",Value = false,Position = "(0.5, -110, 0, 10)",UiScale = 1,Visible = false,Callback = function(state)
     getgenv().BackJumpEnabled = state
