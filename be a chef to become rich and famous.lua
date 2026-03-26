@@ -3,8 +3,8 @@ local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/F
 
 -- Buat jendela utama
 local Window = UI:CreateWindow({
-    Title = "CONTOH SCRIPT",
-    Author = "by NamaKamu",
+    Title = "be a chef to become rich and famous",
+    Author = "by Syfa",
     Folder = "MyScriptGui"
 })
 
