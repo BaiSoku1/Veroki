@@ -1525,6 +1525,8 @@ MiscTab:AddInput("SlideFriction", {Title = "Slide Friction",Description = "Set s
     end
 end})
 
+MiscTab:AddSection("Mod", "apple")
+
 MiscTab:AddButton({Title = "Breacher (Portal Gun)",Description = "Upgrade Breacher tool",Callback = function()
     local success, result = pcall(function()
         local Breacher = require(game:GetService("ReplicatedStorage").Tools.Breacher)
@@ -1660,6 +1662,8 @@ MiscTab:AddButton({Title = "Smoke Grenade",Description = "Upgrade Smoke Grenade"
     end
 end})
 
+MiscTab:AddSection("Gravity", "apple")
+
 getgenv().GravityEnabled = false
 getgenv().GravityValue = 50
 
@@ -1670,6 +1674,10 @@ MiscTab:AddInput("GravityValue", {Title = "Gravity Value",Description = "Set cus
         if getgenv().GravityEnabled then workspace.Gravity = n end
     end
 end})
+
+MiscTab:AddToggle("ShowGravityBtn", {Title = "Show Gravity Button", Default = false, Callback = function(state) DraconicBtn.GravityFlag:VisibleSet(state) end})
+
+MiscTab:AddSection("BackJump", "apple")
 
 getgenv().BackJumpEnabled = false
 getgenv().BackJumpSpeed = 50
@@ -1795,6 +1803,10 @@ MiscTab:AddInput("BackJumpSpeed", {Title = "Back Jump Speed",Description = "Set 
     end
 end})
 
+MiscTab:AddToggle("ShowBackJumpBtn", {Title = "Show Back Jump Button", Default = false, Callback = function(state) DraconicBtn.BackJumpFlag:VisibleSet(state) end})
+
+MiscTab:AddSection("FrontJump", "apple")
+
 getgenv().FrontJumpEnabled = false
 getgenv().FrontJumpSpeed = 50
 local maxExtraSpeedFront = 100
@@ -1919,6 +1931,10 @@ MiscTab:AddInput("FrontJumpSpeed", {Title = "Front Jump Speed",Description = "Se
     end
 end})
 
+MiscTab:AddToggle("ShowFrontJumpBtn", {Title = "Show Front Jump Button", Default = false, Callback = function(state) DraconicBtn.FrontJumpFlag:VisibleSet(state) end})
+
+MiscTab:AddSection("LagSwitch", "apple")
+
 getgenv().LagSwitchDuration = getgenv().LagSwitchDuration or 0.5
 getgenv().LagSwitchMode = getgenv().LagSwitchMode or "Normal"
 
@@ -1957,6 +1973,10 @@ end
 
 MiscTab:AddDropdown("LagSwitchMode",{Title = "Lag Switch Mode",Values = {"Normal","Demon"},Default = getgenv().LagSwitchMode,Callback = function(value) getgenv().LagSwitchMode = value if value == "Demon" then fflagEnabled = true else fflagEnabled = false end end})
 MiscTab:AddInput("LagSwitchDuration",{Title = "Lag Duration",Default = tostring(getgenv().LagSwitchDuration),Placeholder = "0.5",Numeric = true,Callback = function(value) local num = tonumber(value) if num and num > 0 then getgenv().LagSwitchDuration = num else getgenv().LagSwitchDuration = 0.5 end end})
+
+MiscTab:AddToggle("ShowLagSwitchBtn", {Title = "Show Lag Switch", Default = false, Callback = function(state) DraconicBtn.LagFlag:VisibleSet(state) end})
+
+MiscTab:AddSection("Auto respawn", "apple")
 
 local featureStates = { AutoSelfRevive = false, SelfReviveMethod = "Spawnpoint" }    
 local lastSavedPosition = nil
@@ -2025,10 +2045,12 @@ if LocalPlayer.Character and featureStates.AutoSelfRevive then setupAutoRevive(L
 
 local INTERACT_REMOTE = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Character"):WaitForChild("Interact")
 
+MiscTab:AddSection("auto carry and revive", "apple")
+
 getgenv().AutoCarryEnabled = false
 getgenv().AutoReviveEnabled = false
-getgenv().AutoCarryDelay = 1
-getgenv().AutoReviveDelay = 1
+getgenv().AutoCarryDelay = 0.1
+getgenv().AutoReviveDelay = 0.1
 
 RunService.RenderStepped:Connect(function()
     if getgenv().AutoCarryEnabled then
@@ -2069,6 +2091,9 @@ end)
 
 MiscTab:AddInput("CarryDelay", {Title = "Carry Delay (s)",Description = "Set auto carry delay",Default = tostring(getgenv().AutoCarryDelay),Placeholder = "1",Numeric = true,Callback = function(val) local n = tonumber(val) if n and n > 0 then getgenv().AutoCarryDelay = n end end})
 MiscTab:AddInput("ReviveDelay", {Title = "Revive Delay (s)",Description = "Set auto revive delay",Default = tostring(getgenv().AutoReviveDelay),Placeholder = "1",Numeric = true,Callback = function(val) local n = tonumber(val) if n and n > 0 then getgenv().AutoReviveDelay = n end end})
+
+MiscTab:AddToggle("ShowAutoCarryBtn", {Title = "Show Carry Button", Default = false, Callback = function(state) DraconicBtn.AutoCarryFlag:VisibleSet(state) end})
+MiscTab:AddToggle("ShowAutoReviveBtn", {Title = "Show Revive Button", Default = false, Callback = function(state) DraconicBtn.AutoReviveFlag:VisibleSet(state) end})
 
 local LP = Players.LocalPlayer
 local CURRENT_AVATAR = nil
@@ -2393,7 +2418,7 @@ local currentEmoteInputs = {}
 local selectEmoteInputs = {}
 local allEmotesList = {}
 
-for i = 1, 12 do
+for i = 1, 6 do
     currentEmotes[i] = ""
     selectEmotes[i] = ""
 end
@@ -2435,6 +2460,18 @@ local function searchEmote(partialName)
     return nil
 end
 
+-- zumbie id anims, only zumbie stride//
+local classicIDs = {
+    "rbxassetid://73383479205643",
+    "rbxassetid://84248734120911",
+    "rbxassetid://125497596837433"
+}
+local normalIDs = {
+    "rbxassetid://15221552726",
+    "rbxassetid://15221548816",
+    "rbxassetid://15221544236"
+}
+
 function fireSelect(emoteName)
     if not currentTag then return end
     local tagNumber = tonumber(currentTag)
@@ -2463,7 +2500,7 @@ function setupAnimationListener()
                     local emoteModule = animation:FindFirstAncestorWhichIsA("ModuleScript")
                     if emoteModule then
                         local currentEmoteName = emoteModule.Name
-                        for i = 1, 12 do
+                        for i = 1, 6 do
                             if currentEmotes[i] ~= "" and selectEmotes[i] ~= "" then
                                 local normalizedCurrent = normalizeText(currentEmotes[i])
                                 local normalizedPlaying = normalizeText(currentEmoteName)
@@ -2583,7 +2620,7 @@ function replaceEmotesFrame()
         if not textLabel then return end
         local currentText = textLabel.Text
         local normalizedCurrent = normalizeText(currentText)
-        for j = 1, 12 do
+        for j = 1, 6 do
             local searchEmote = currentEmotes[j]
             local replaceEmote = selectEmotes[j]
             if searchEmote ~= "" and replaceEmote ~= "" then
@@ -2692,7 +2729,7 @@ function handleSingleRespawn()
     end
 end
 
-for i = 1, 12 do
+for i = 1, 6 do
     VisualTab:AddInput("CurrentEmote" .. i, {Title = "Current Emote " .. i,Description = "Type emote name...",Default = currentEmotes[i],Placeholder = "Type emote name...",Callback = function(v)
         local cleaned = v:gsub("%s+", "")
         currentEmotes[i] = cleaned
@@ -2702,7 +2739,7 @@ end
 
 VisualTab:AddSection("Select", "apple")
 
-for i = 1, 12 do
+for i = 1, 6 do
     VisualTab:AddInput("SelectEmote" .. i, {Title = "Select Emote " .. i,Description = "Type emote name to replace with...",Default = selectEmotes[i],Placeholder = "Type emote name...",Callback = function(v)
         local cleaned = v:gsub("%s+", "")
         selectEmotes[i] = cleaned
@@ -2740,7 +2777,7 @@ end})
 
 VisualTab:AddButton({Title = "Apply Emote Mappings",Description = "Apply current emote mappings",Callback = function()
     local hasAnyEmote = false
-    for i = 1, 12 do
+    for i = 1, 6 do
         if currentEmotes[i] ~= "" or selectEmotes[i] ~= "" then hasAnyEmote = true break end
     end
     if not hasAnyEmote then return end
@@ -2765,7 +2802,7 @@ VisualTab:AddButton({Title = "Apply Emote Mappings",Description = "Apply current
     local missingEmoteSlots = {}
     local invalidEmoteSlots = {}
     local successfulSlots = {}
-    for i = 1, 12 do
+    for i = 1, 6 do
         if currentEmotes[i] ~= "" and selectEmotes[i] ~= "" then
             local currentValid, currentActual = isValidEmote(currentEmotes[i])
             local selectValid, selectActual = isValidEmote(selectEmotes[i])
@@ -2796,7 +2833,7 @@ end})
 
 VisualTab:AddButton({Title = "Reset All Emotes",Description = "Reset all emote mappings",Callback = function()
     if emoteFrame then restoreOriginalEmotes() end
-    for i = 1, 12 do currentEmotes[i] = "" selectEmotes[i] = "" end
+    for i = 1, 6 do currentEmotes[i] = "" selectEmotes[i] = "" end
     emoteNameCache = {}
     normalizedCache = {}
     cleanUpLastEmoteFrame()
@@ -2810,6 +2847,25 @@ if workspace:FindFirstChild("Game") and workspace.Game:FindFirstChild("Players")
     end)
     workspace.Game.Players.ChildRemoved:Connect(function(child)
         if child.Name == player.Name then currentTag = nil cleanUpLastEmoteFrame() end
+    end)
+end
+
+local zombie = ReplicatedStorage.Items.Emotes:FindFirstChild("ZombieStride")
+if zombie then
+    
+    if zombie:FindFirstChild("EmoteModule") then zombie.EmoteModule:Destroy() end
+    if zombie:FindFirstChild("EmoteModuleClassic") then zombie.EmoteModuleClassic:Destroy() end
+
+    spawn(function()
+        while true do
+            if zombie:FindFirstChild("Animation") then
+                zombie.Animation.AnimationId = normalIDs[math.random(1,#normalIDs)]
+            end
+            if zombie:FindFirstChild("AnimationClassic") then
+                zombie.AnimationClassic.AnimationId = classicIDs[math.random(1,#classicIDs)]
+            end
+            task.wait(1) 
+        end
     end)
 end
 
@@ -3166,14 +3222,5 @@ DraconicBtn:Button({Name = "LagFlag",Text = "Lag Switch",Position = "(0.5, -110,
 DraconicBtn:Toggle({Name = "AutoCarryFlag",Text = "Auto Carry",Value = false,Position = "(0.5, -110, 0, 50)",UiScale = 1,Visible = false,Callback = function(state) getgenv().AutoCarryEnabled = state end})
 
 DraconicBtn:Toggle({Name = "AutoReviveFlag",Text = "Auto Revive",Value = false,Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function(state) getgenv().AutoReviveEnabled = state end})
-
-MiscTab:AddSection("Show Floating Buttons", "apple")
-
-MiscTab:AddToggle("ShowGravityBtn", {Title = "Show Gravity Button", Default = false, Callback = function(state) DraconicBtn.GravityFlag:VisibleSet(state) end})
-MiscTab:AddToggle("ShowBackJumpBtn", {Title = "Show Back Jump Button", Default = false, Callback = function(state) DraconicBtn.BackJumpFlag:VisibleSet(state) end})
-MiscTab:AddToggle("ShowFrontJumpBtn", {Title = "Show Front Jump Button", Default = false, Callback = function(state) DraconicBtn.FrontJumpFlag:VisibleSet(state) end})
-MiscTab:AddToggle("ShowLagSwitchBtn", {Title = "Show Lag Switch", Default = false, Callback = function(state) DraconicBtn.LagFlag:VisibleSet(state) end})
-MiscTab:AddToggle("ShowAutoCarryBtn", {Title = "Show Carry Button", Default = false, Callback = function(state) DraconicBtn.AutoCarryFlag:VisibleSet(state) end})
-MiscTab:AddToggle("ShowAutoReviveBtn", {Title = "Show Revive Button", Default = false, Callback = function(state) DraconicBtn.AutoReviveFlag:VisibleSet(state) end})
 
 print("Veroki Hub loaded successfully with Fluent UI and DraconicBtn (show toggles added) :] !")
