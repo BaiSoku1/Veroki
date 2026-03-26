@@ -2639,18 +2639,6 @@ local function searchEmote(partialName)
     return nil
 end
 
--- zumbie id anims, only zumbie stride//
-local classicIDs = {
-    "rbxassetid://73383479205643",
-    "rbxassetid://84248734120911",
-    "rbxassetid://125497596837433"
-}
-local normalIDs = {
-    "rbxassetid://15221552726",
-    "rbxassetid://15221548816",
-    "rbxassetid://15221544236"
-}
-
 function fireSelect(emoteName)
     if not currentTag then return end
     local tagNumber = tonumber(currentTag)
@@ -2926,27 +2914,75 @@ for i = 1, 6 do
     end})
 end
 
-VisualTab:AddInput("EmoteOption", {Title = "Emote Possible option",Description = "Use 1-3 (0 or 'Random' for random)",Default = "0",Placeholder = "0",Numeric = true,Callback = function(v)
-    local currentNum = v:lower() == "random" and "Random" or tonumber(v) or 0
-    function setupCharacter(char)
-        if char == player.Character then char:SetAttribute("EmoteNum", currentNum == "Random" and math.random(1, 3) or currentNum) end
-    end
-    function monitorCharacter()
-        while true do
-            task.wait(1)
-            local char = player.Character
-            if char and char:GetAttribute("EmoteNum") ~= currentNum then
-                char:SetAttribute("EmoteNum", currentNum == "Random" and math.random(1, 3) or currentNum)
+VisualTab:AddInput("EmoteOption", {
+    Title = "Emote Possible option",
+    Description = "Higher Value may Broke emote animation recommend Use 1-3 (0 or 'Random' for random)",
+    Default = "0",
+    Placeholder = "0",
+    Numeric = true,
+    Callback = function(v)
+        local currentNum
+        if v:lower() == "random" then
+            currentNum = "Random"
+        elseif tonumber(v) == 0 then
+            currentNum = "Random"
+        else
+            currentNum = tonumber(v) or 0
+        end
+
+        local function setupCharacter(char)
+            if char == player.Character then
+                local emoteNumValue
+                if currentNum == "Random" then
+                    emoteNumValue = math.random(1, 3)
+                else
+                    emoteNumValue = currentNum
+                end
+                char:SetAttribute("EmoteNum", emoteNumValue)
             end
         end
+
+        local monitorThread
+        local function startMonitor()
+            if monitorThread then
+                task.cancel(monitorThread)
+            end
+            monitorThread = task.spawn(function()
+                while true do
+                    task.wait(1)
+                    local char = player.Character
+                    if char then
+                        local currentAttribute = char:GetAttribute("EmoteNum")
+                        local targetValue
+                        if currentNum == "Random" then
+                            targetValue = math.random(1, 3)
+                        else
+                            targetValue = currentNum
+                        end
+                        if currentAttribute ~= targetValue then
+                            char:SetAttribute("EmoteNum", targetValue)
+                        end
+                    end
+                end
+            end)
+        end
+
+        -- Hentikan monitor thread lama jika ada
+        if getgenv()._emoteMonitorThread then
+            task.cancel(getgenv()._emoteMonitorThread)
+        end
+
+        if player.Character then
+            setupCharacter(player.Character)
+        end
+        player.CharacterAdded:Connect(function(char)
+            task.wait(1)
+            setupCharacter(char)
+        end)
+        startMonitor()
+        getgenv()._emoteMonitorThread = monitorThread
     end
-    if player.Character then setupCharacter(player.Character) end
-    player.CharacterAdded:Connect(function(char)
-        task.wait(1)
-        setupCharacter(char)
-    end)
-    task.spawn(monitorCharacter)
-end})
+})
 
 VisualTab:AddToggle("ReplaceEmoteWheel", {Title = "Enable replace emote wheel",Description = "Toggle emote wheel replacement",Default = true,Callback = function(state)
     replacementEnabled = state
@@ -3026,25 +3062,6 @@ if workspace:FindFirstChild("Game") and workspace.Game:FindFirstChild("Players")
     end)
     workspace.Game.Players.ChildRemoved:Connect(function(child)
         if child.Name == player.Name then currentTag = nil cleanUpLastEmoteFrame() end
-    end)
-end
-
-local zombie = ReplicatedStorage.Items.Emotes:FindFirstChild("ZombieStride")
-if zombie then
-    
-    if zombie:FindFirstChild("EmoteModule") then zombie.EmoteModule:Destroy() end
-    if zombie:FindFirstChild("EmoteModuleClassic") then zombie.EmoteModuleClassic:Destroy() end
-
-    spawn(function()
-        while true do
-            if zombie:FindFirstChild("Animation") then
-                zombie.Animation.AnimationId = normalIDs[math.random(1,#normalIDs)]
-            end
-            if zombie:FindFirstChild("AnimationClassic") then
-                zombie.AnimationClassic.AnimationId = classicIDs[math.random(1,#classicIDs)]
-            end
-            task.wait(1) 
-        end
     end)
 end
 
