@@ -1443,6 +1443,49 @@ MiscTab:AddButton({Title = "Reset Emote Speed",Description = "Reset emote speed 
     Fluent:Notify({Title = "Emote Speed",Content = "Emote speed reset to original",Duration = 2})
 end})
 
+MiscTab:AddSection("LagSwitch", "apple")
+
+getgenv().LagSwitchDuration = getgenv().LagSwitchDuration or 0.5
+getgenv().LagSwitchMode = getgenv().LagSwitchMode or "Normal"
+
+local fflagEnabled = false
+
+local function SetFFlag(val)
+    pcall(function() setfflag("MaxMissedWorldStepsRemembered", tostring(val)) end)
+end
+
+task.spawn(function()
+    while true do
+        if fflagEnabled then SetFFlag(1000) end
+        task.wait(1)
+    end
+end)
+
+local function triggerLagSwitch()
+    task.spawn(function()
+        local start = tick()
+        local duration = getgenv().LagSwitchDuration
+        if getgenv().LagSwitchMode == "Normal" then
+            while tick() - start < duration do
+                for i = 1, 10000 do math.random(1,1000000) end
+            end
+        else
+            while tick() - start < duration do
+                for i = 1, 20000 do
+                    math.random(1,1000000)
+                    local x = math.sqrt(i * 12345)
+                    local y = math.sin(x) * math.cos(x)
+                end
+            end
+        end
+    end)
+end
+
+MiscTab:AddDropdown("LagSwitchMode",{Title = "Lag Switch Mode",Values = {"Normal","Demon"},Default = getgenv().LagSwitchMode,Callback = function(value) getgenv().LagSwitchMode = value if value == "Demon" then fflagEnabled = true else fflagEnabled = false end end})
+MiscTab:AddInput("LagSwitchDuration",{Title = "Lag Duration",Default = tostring(getgenv().LagSwitchDuration),Placeholder = "0.5",Numeric = true,Callback = function(value) local num = tonumber(value) if num and num > 0 then getgenv().LagSwitchDuration = num else getgenv().LagSwitchDuration = 0.5 end end})
+
+MiscTab:AddToggle("ShowLagSwitchBtn", {Title = "Show Lag Switch", Default = false, Callback = function(state) DraconicBtn.LagFlag:VisibleSet(state) end})
+
 MiscTab:AddSection("inf slide", "apple")
 
 local CachedTables = {}
@@ -1856,6 +1899,152 @@ task.spawn(function()
     end
 end)
 
+MiscTab:AddSection("autoEmote", "apple")
+
+local EmoteCrouchEnabled = false
+local featureStates = featureStates or {}
+
+for i = 1, 12 do
+    MiscTab:AddInput("Emote" .. i, {
+        Title = "Emote " .. i,
+        Placeholder = "Emote Name Here",
+        Callback = function(value)
+            featureStates["Emote" .. i] = value
+        end
+    })
+end
+
+function triggerRandomEmote()
+    local validEmotes = {}
+    for i = 1, 12 do
+        local emoteName = featureStates["Emote" .. i]
+        if emoteName and emoteName ~= "" then
+            table.insert(validEmotes, emoteName)
+        end
+    end
+
+    if #validEmotes > 0 then
+        math.randomseed(tick() + #validEmotes)
+        local crouchData = { ["Key"] = "Crouch", ["Down"] = true }
+        pcall(function()
+            player.PlayerScripts.Events.temporary_events.UseKeybind:Fire(crouchData)
+        end)
+        local randomIndex = math.random(1, #validEmotes)
+        local randomEmote = validEmotes[randomIndex]
+        pcall(function()
+            ReplicatedStorage.Events.Character.Emote:FireServer(randomEmote)
+        end)
+    end
+end
+
+MiscTab:AddToggle("EmoteCrouchToggle", {
+    Title = "Emote Crouch",
+    Description = "Only type emote name without space and inside your emote slot will work",
+    Default = false,
+    Callback = function(state)
+        EmoteCrouchEnabled = state
+        DraconicBtn.EmoteCrouchFlag:VisibleSet(state)
+    end
+})
+
+MiscTab:AddSection("auto crouch", "apple")
+
+local previousCrouchState = false
+local spamDown = true
+local previousAutoCrouch = false
+local crouchConnection = nil
+local AutoCrouch = false
+local AutoCrouchMode = "Air"
+
+function fireKeybind(down, key)
+    local data = {
+        ["Down"] = down,
+        ["Key"] = key
+    }
+    local event = player:WaitForChild("PlayerScripts"):WaitForChild("Events"):WaitForChild("temporary_events"):WaitForChild("UseKeybind")
+    event:Fire(data)
+end
+
+function setupAutoCrouchListeners()
+    if crouchConnection then 
+        crouchConnection:Disconnect() 
+    end
+    
+    crouchConnection = RunService.Heartbeat:Connect(function()
+        local autoOn = AutoCrouch
+        local mode = AutoCrouchMode
+
+        if previousAutoCrouch and not autoOn then
+            local character = player.Character
+            if character and character:FindFirstChild("Humanoid") then
+                if mode == "Normal" then
+                    fireKeybind(false, "Crouch")
+                end
+            end
+        end
+
+        previousAutoCrouch = autoOn
+
+        if not autoOn then return end
+
+        local character = player.Character
+        if not character or not character:FindFirstChild("Humanoid") then return end
+
+        local humanoid = character.Humanoid
+
+        if mode == "Spam" then
+            fireKeybind(spamDown, "Crouch")
+            spamDown = not spamDown
+        elseif mode == "Normal" then
+            fireKeybind(true, "Crouch")
+        else
+            local isAir = (humanoid.FloorMaterial == Enum.Material.Air) and 
+                          (humanoid:GetState() ~= Enum.HumanoidStateType.Seated)
+            local shouldCrouch = (mode == "Air" and isAir) or (mode == "Ground" and not isAir)
+            
+            if shouldCrouch ~= previousCrouchState then
+                fireKeybind(shouldCrouch, "Crouch")
+                previousCrouchState = shouldCrouch
+            end
+        end
+    end)
+
+    player.CharacterAdded:Connect(function()
+        previousCrouchState = false
+        spamDown = true
+    end)
+end
+
+setupAutoCrouchListeners()
+
+MiscTab:AddToggle("AutoCrouchToggle", {
+    Title = "Auto Crouch",
+    Default = false,
+    Callback = function(state)
+        AutoCrouch = state
+        if not state then
+            previousAutoCrouch = false
+        end
+    end
+})
+
+MiscTab:AddToggle("ShowAutoCrouchButton", {
+    Title = "Show Auto Crouch Button",
+    Default = false,
+    Callback = function(state)
+        DraconicBtn.AutoCrouchFlag:VisibleSet(state)
+    end
+})
+
+MiscTab:AddDropdown("AutoCrouchMode", {
+    Title = "Auto Crouch Mode",
+    Values = {"Air", "Spam", "Ground", "Normal"},
+    Default = "Air",
+    Callback = function(value)
+        AutoCrouchMode = value
+    end
+})
+
 MiscTab:AddSection("BackJump", "apple")
 
 getgenv().BackJumpEnabled = false
@@ -2111,49 +2300,6 @@ MiscTab:AddInput("FrontJumpSpeed", {Title = "Front Jump Speed",Description = "Se
 end})
 
 MiscTab:AddToggle("ShowFrontJumpBtn", {Title = "Show Front Jump Button", Default = false, Callback = function(state) DraconicBtn.FrontJumpFlag:VisibleSet(state) end})
-
-MiscTab:AddSection("LagSwitch", "apple")
-
-getgenv().LagSwitchDuration = getgenv().LagSwitchDuration or 0.5
-getgenv().LagSwitchMode = getgenv().LagSwitchMode or "Normal"
-
-local fflagEnabled = false
-
-local function SetFFlag(val)
-    pcall(function() setfflag("MaxMissedWorldStepsRemembered", tostring(val)) end)
-end
-
-task.spawn(function()
-    while true do
-        if fflagEnabled then SetFFlag(1000) end
-        task.wait(1)
-    end
-end)
-
-local function triggerLagSwitch()
-    task.spawn(function()
-        local start = tick()
-        local duration = getgenv().LagSwitchDuration
-        if getgenv().LagSwitchMode == "Normal" then
-            while tick() - start < duration do
-                for i = 1, 10000 do math.random(1,1000000) end
-            end
-        else
-            while tick() - start < duration do
-                for i = 1, 20000 do
-                    math.random(1,1000000)
-                    local x = math.sqrt(i * 12345)
-                    local y = math.sin(x) * math.cos(x)
-                end
-            end
-        end
-    end)
-end
-
-MiscTab:AddDropdown("LagSwitchMode",{Title = "Lag Switch Mode",Values = {"Normal","Demon"},Default = getgenv().LagSwitchMode,Callback = function(value) getgenv().LagSwitchMode = value if value == "Demon" then fflagEnabled = true else fflagEnabled = false end end})
-MiscTab:AddInput("LagSwitchDuration",{Title = "Lag Duration",Default = tostring(getgenv().LagSwitchDuration),Placeholder = "0.5",Numeric = true,Callback = function(value) local num = tonumber(value) if num and num > 0 then getgenv().LagSwitchDuration = num else getgenv().LagSwitchDuration = 0.5 end end})
-
-MiscTab:AddToggle("ShowLagSwitchBtn", {Title = "Show Lag Switch", Default = false, Callback = function(state) DraconicBtn.LagFlag:VisibleSet(state) end})
 
 MiscTab:AddSection("Auto respawn", "apple")
 
@@ -3772,11 +3918,12 @@ DraconicBtn:Toggle({
     end
 })
 
+DraconicBtn:Button({Name = "LagFlag",Text = "Lag Switch",Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function() triggerLagSwitch() end})
+
 DraconicBtn:Toggle({Name = "GravityFlag",Text = "Gravity",Value = false,Position = "(0.5, -110, 0, 60)",UiScale = 1,Visible = false,Callback = function(state)
     getgenv().GravityEnabled = state
     workspace.Gravity = state and getgenv().GravityValue or 196.2
 end})
-
 
 DraconicBtn:Toggle({
     Name = "AutoJumpFlag",
@@ -3790,6 +3937,30 @@ DraconicBtn:Toggle({
     end
 })
 
+DraconicBtn:Button({
+    Name = "EmoteCrouchFlag",
+    Text = "Emote Crouch",
+    Position = "(0.5, -125, 0.2, 0)",
+    UiScale = 1,
+    Visible = false,
+    Callback = function() triggerRandomEmote() end
+})
+
+DraconicBtn:Toggle({
+    Name = "AutoCrouchFlag",
+    Text = "Auto Crouch",
+    Value = false,
+    Position = "(0.5, -125, 0.4, 0)",
+    UiScale = 1,
+    Visible = false,
+    Callback = function(state)
+        AutoCrouch = state
+        if MiscTab and MiscTab.AutoCrouchToggle then
+            MiscTab.AutoCrouchToggle:SetValue(state)
+        end
+    end
+})
+
 DraconicBtn:Toggle({Name = "BackJumpFlag",Text = "Back Jump",Value = false,Position = "(0.5, -110, 0, 10)",UiScale = 1,Visible = false,Callback = function(state)
     getgenv().BackJumpEnabled = state
 end})
@@ -3797,8 +3968,6 @@ end})
 DraconicBtn:Toggle({Name = "FrontJumpFlag",Text = "Front Jump",Value = false,Position = "(0.5, -110, 0, 60)",UiScale = 1,Visible = false,Callback = function(state)
     getgenv().FrontJumpEnabled = state
 end})
-
-DraconicBtn:Button({Name = "LagFlag",Text = "Lag Switch",Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function() triggerLagSwitch() end})
 
 DraconicBtn:Button({
     Name = "RespawnFlag",
