@@ -1904,7 +1904,7 @@ MiscTab:AddSection("autoEmote", "apple")
 local EmoteCrouchEnabled = false
 local featureStates = featureStates or {}
 
-for i = 1, 12 do
+for i = 1, 6 do
     MiscTab:AddInput("Emote" .. i, {
         Title = "Emote " .. i,
         Placeholder = "Emote Name Here",
@@ -1916,7 +1916,7 @@ end
 
 function triggerRandomEmote()
     local validEmotes = {}
-    for i = 1, 12 do
+    for i = 1, 6 do
         local emoteName = featureStates["Emote" .. i]
         if emoteName and emoteName ~= "" then
             table.insert(validEmotes, emoteName)
