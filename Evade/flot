@@ -3,69 +3,7 @@ local module = {}
 local Minimized = false
 local Window
 local FloatButton
-local gui, button, topImage, backgroundImage
-local audioDownloaded = false
-
-local function downloadAudio()
-    if audioDownloaded and isfile("point1.mp3") then
-        return true
-    end
-    
-    local audioUrl = "https://github.com/Ksjsowos/29401/raw/refs/heads/main/Online%20Script/point1.mp3"
-    local request = http_request or (syn and syn.request) or request
-    
-    local success, response = pcall(function()
-        return request({Url = audioUrl, Method = "GET"})
-    end)
-    
-    if success and response and response.Body and #response.Body > 1000 then
-        writefile("point1.mp3", response.Body)
-        audioDownloaded = true
-        return true
-    else
-        warn("Failed to download audio")
-        return false
-    end
-end
-
-local function playAudio()
-    if not isfile("point1.mp3") then
-        if not downloadAudio() then
-            warn("Audio file not found and download failed!")
-            return nil
-        end
-    end
-    
-    local sound = Instance.new("Sound")
-    sound.SoundId = getcustomasset("point1.mp3")
-    sound.Volume = 1
-    sound.Parent = game:GetService("SoundService")
-    
-    sound.Ended:Connect(function()
-        sound:Destroy()
-    end)
-    
-    local success, errorMsg = pcall(function()
-        sound:Play()
-    end)
-    
-    if not success then
-        warn("Failed to play sound:", errorMsg)
-        sound:Destroy()
-        return nil
-    end
-    
-    return sound
-end
-
-local function ToggleMinimize()
-    if Window then
-        Window:Minimize()
-        Minimized = true
-        return true
-    end
-    return false
-end
+local gui, button, rotatingBg, staticIcon
 
 function module.init(fluentWindow)
     if gui and gui.Parent then
@@ -74,8 +12,6 @@ function module.init(fluentWindow)
     end
     
     Window = fluentWindow
-    
-    downloadAudio()
     
     local Players = game:GetService("Players")
     local player = Players.LocalPlayer
@@ -87,106 +23,191 @@ function module.init(fluentWindow)
         return module
     end
     
+    -- Create ScreenGui
     gui = Instance.new("ScreenGui")
     gui.Name = "FloatingButtonGUI"
     gui.ResetOnSpawn = false
     gui.Parent = playerGui
     
-    button = Instance.new("Frame")
+    -- Create main button
+    button = Instance.new("TextButton")
     button.Name = "FloatingButton"
-    button.Size = UDim2.new(0, 120, 0, 90)
-    button.Position = UDim2.new(0.5, -75, 0.5, -75)
-    button.BackgroundTransparency = 1
     button.Parent = gui
+    button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    button.BackgroundTransparency = 1
+    button.Position = UDim2.new(0.101969875395298, 0, 0.11044176667928696, 0)
+    button.Size = UDim2.new(0, 64, 0, 42)
+    button.Text = ""
     
-    topImage = Instance.new("ImageButton")
-    topImage.Name = "TopAsset"
-    topImage.Size = UDim2.new(0.5, 0, 0.600000024, 0)
-    topImage.AnchorPoint = Vector2.new(0.5, 0.5)
-    topImage.Position = UDim2.new(0.5, -230, 0.5, -71)
-    topImage.BackgroundTransparency = 1
-    topImage.Image = "rbxassetid://134008899762482"
-    topImage.ZIndex = 2
-    topImage.Parent = button
-    topImage.Draggable = true
+    -- Create rotating background
+    rotatingBg = Instance.new("ImageLabel")
+    rotatingBg.Name = "RotatingBackground"
+    rotatingBg.Parent = button
+    rotatingBg.Image = "rbxassetid://132923562017802"
+    rotatingBg.AnchorPoint = Vector2.new(0.5, 0.5)
+    rotatingBg.BackgroundTransparency = 1
+    rotatingBg.Position = UDim2.new(0.5, 0, 0.5, 0)
+    rotatingBg.Size = UDim2.new(1.899999976158142, 0, 1.899999976158142, 0)
+    rotatingBg.SizeConstraint = Enum.SizeConstraint.RelativeXX
+    rotatingBg.ZIndex = 0
     
-    FloatButton = topImage
+    -- Create static icon
+    staticIcon = Instance.new("ImageLabel")
+    staticIcon.Name = "StaticIcon"
+    staticIcon.Parent = button
+    staticIcon.Image = "rbxassetid://134006068620274"
+    staticIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    staticIcon.BackgroundTransparency = 1
+    staticIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    staticIcon.Size = UDim2.new(0.800000011920929, 0, 1, 0)
     
-    FloatButton.MouseButton1Click:Connect(function()
-        local minimized = ToggleMinimize()
-        if minimized then
-            playAudio()
-        end
-    end)
+    -- Add corner radius to static icon
+    local iconCorner = Instance.new("UICorner")
+    iconCorner.Parent = staticIcon
+    iconCorner.CornerRadius = UDim.new(1, 0)
     
-    if Window then
-        Window.MinimizeToggle = ToggleMinimize
-    end
+    FloatButton = button
     
-    backgroundImage = Instance.new("ImageLabel")
-    backgroundImage.Name = "SpinningBackground"
-    backgroundImage.Size = UDim2.new(1, 0, 1, 10)
-    backgroundImage.AnchorPoint = Vector2.new(0.5, 0.5)
-    backgroundImage.Position = UDim2.new(0.5, 0, 0.5, 0)
-    backgroundImage.BackgroundTransparency = 1
-    backgroundImage.Image = "rbxassetid://111857331997079"
-    backgroundImage.ZIndex = 1
-    backgroundImage.Parent = topImage
-    backgroundImage.Interactable = false
+    -- Audio IDs for click sounds
+    local audioIds = {
+        "rbxassetid://137566474343039",
+        "rbxassetid://7127123605",
+        "rbxassetid://438666542"
+    }
     
-    local backgroundScale = Instance.new("UIScale")
-    backgroundScale.Scale = 2
-    backgroundScale.Parent = backgroundImage
+    -- Rotation variables
+    local baseSpeed = 45
+    local currentSpeed = baseSpeed
+    local boostEndTime = 0
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = topImage
+    -- Drag functionality
+    local dragging = false
+    local dragStartPos = nil
+    local dragStartInputPos = nil
+    local dragConnection = nil
+    local dragEndConnection = nil
     
     local UserInputService = game:GetService("UserInputService")
-    local dragging = false
-    local dragStart, startPos
     
-    local function update(input)
-        local delta = input.Position - dragStart
-        button.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+    local function onDrag(input)
+        if not dragging then return end
+        
+        local delta = input.Position - dragStartInputPos
+        
+        local newX = dragStartPos.X.Scale + (delta.X / gui.AbsoluteSize.X)
+        local newY = dragStartPos.Y.Scale + (delta.Y / gui.AbsoluteSize.Y)
+        
+        newX = math.clamp(newX, 0, 1 - button.Size.X.Scale)
+        newY = math.clamp(newY, 0, 1 - button.Size.Y.Scale)
+        
+        button.Position = UDim2.new(newX, 0, newY, 0)
+    end
+    
+    local function stopDrag()
+        dragging = false
+        if dragConnection then
+            dragConnection:Disconnect()
+            dragConnection = nil
+        end
+        if dragEndConnection then
+            dragEndConnection:Disconnect()
+            dragEndConnection = nil
+        end
+    end
+    
+    local function startDrag(input)
+        if dragging then
+            stopDrag()
+        end
+        
+        dragging = true
+        dragStartPos = button.Position
+        dragStartInputPos = input.Position
+        
+        dragConnection = UserInputService.InputChanged:Connect(function(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                onDrag(input)
+            end
+        end)
+        
+        dragEndConnection = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                stopDrag()
+            end
+        end)
     end
     
     button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = button.Position
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            startDrag(input)
         end
     end)
     
-    button.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
+    button.MouseButton1Click:Connect(function()
+        if dragging then return end
+        
+        local sound = Instance.new("Sound")
+        sound.SoundId = audioIds[math.random(1, #audioIds)]
+        sound.Volume = 1
+        sound.Parent = gui
+        sound:Play()
+        
+        sound.Ended:Connect(function()
+            sound:Destroy()
+        end)
+        
+        boostEndTime = tick() + 1.3
+        
+        -- Toggle minimize when clicked
+        if Window then
+            Window:Minimize()
+            Minimized = true
         end
     end)
     
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            update(input)
+    button.TouchTap:Connect(function()
+        if dragging then return end
+        
+        local sound = Instance.new("Sound")
+        sound.SoundId = audioIds[math.random(1, #audioIds)]
+        sound.Volume = 1
+        sound.Parent = gui
+        sound:Play()
+        
+        sound.Ended:Connect(function()
+            sound:Destroy()
+        end)
+        
+        boostEndTime = tick() + 1.3
+        
+        -- Toggle minimize when tapped
+        if Window then
+            Window:Minimize()
+            Minimized = true
         end
     end)
     
-    local RunService = game:GetService("RunService")
-    local connection
-    connection = RunService.RenderStepped:Connect(function(deltaTime)
-        if backgroundImage and backgroundImage.Parent then
-            backgroundImage.Rotation = (backgroundImage.Rotation + (100 * deltaTime)) % 360
+    -- Rotation animation
+    game:GetService("RunService").RenderStepped:Connect(function(dt)
+        if tick() < boostEndTime then
+            currentSpeed = 360
         else
-            if connection then
-                connection:Disconnect()
-            end
+            currentSpeed = baseSpeed
         end
+        
+        rotatingBg.Rotation = rotatingBg.Rotation + (currentSpeed * dt)
     end)
+    
+    if Window then
+        Window.MinimizeToggle = function()
+            if Window then
+                Window:Minimize()
+                Minimized = true
+                return true
+            end
+            return false
+        end
+    end
     
     print("Floating button initialized successfully!")
     return module
@@ -198,8 +219,8 @@ function module.destroy()
         gui = nil
     end
     button = nil
-    topImage = nil
-    backgroundImage = nil
+    rotatingBg = nil
+    staticIcon = nil
     FloatButton = nil
     print("Floating button destroyed")
     return true
@@ -217,12 +238,13 @@ function module.isMinimized()
     return Minimized
 end
 
-function module.playSound()
-    return playAudio()
-end
-
 function module.toggleMinimize()
-    return ToggleMinimize()
+    if Window then
+        Window:Minimize()
+        Minimized = true
+        return true
+    end
+    return false
 end
 
 function module.setWindowPosition(x, y)
