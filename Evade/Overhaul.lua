@@ -1,4 +1,4 @@
-if getgenv().VerokiHub then
+--[[if getgenv().VerokiHub then
 loadstring(game:HttpGet("https://darahub.pages.dev/Module/ToastNotification.lua"))()
 NotifyToast({title = "WARNING!",content = "Script Is Already Loaded, rejoin of you want to re-execute.",duration = 8,icon = "triangle-exclamation",iconColor = "#FFFF00"})
 return end
@@ -3994,3 +3994,6 @@ DraconicBtn:Toggle({Name = "AutoCarryFlag",Text = "Auto Carry",Value = false,Pos
 DraconicBtn:Toggle({Name = "AutoReviveFlag",Text = "Auto Revive",Value = false,Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function(state) getgenv().AutoReviveEnabled = state end})
 
 print("Veroki Hub loaded successfully with Fluent UI and DraconicBtn (show toggles added) :] !")
+]]
+
+error("your code is ass💔🙏")
