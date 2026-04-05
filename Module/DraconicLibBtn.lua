@@ -124,7 +124,7 @@ function DragSystem.MakeDraggable(MainFrame: GuiObject, DragFrame: GuiObject, Ca
 			updatePosition(input)
 		end
 	end)
-	
+	error("your code is ass 💔 🙏")
 	return function()
 		inputBeganConnection:Disconnect()
 		inputChangedConnection:Disconnect()
