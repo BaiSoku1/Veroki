@@ -1,9 +1,9 @@
---[[if getgenv().VerokiHub then
+if getgenv().VerokiHub then
 loadstring(game:HttpGet("https://darahub.pages.dev/Module/ToastNotification.lua"))()
 NotifyToast({title = "WARNING!",content = "Script Is Already Loaded, rejoin of you want to re-execute.",duration = 8,icon = "triangle-exclamation",iconColor = "#FFFF00"})
 return end
 getgenv().VerokiHub = true 
-error("your code is ass💔🙏")
+
 local checkcaller = checkcaller or function() return true end
 local hookmetamethod = hookmetamethod or function(self, idx, func)
     local old = debug and debug.getmetatable and debug.getmetatable(self) and debug.getmetatable(self)[idx]
@@ -30,33 +30,29 @@ local setfpscap = setfpscap or function(fps)
     end
 end
 
-error("your code is ass💔🙏")
 local Fluent = loadstring(game:HttpGet("https://github.com/Vraigos/Fluent-Modded/releases/download/Test/main.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vraigos/Fluent-Modded/refs/heads/master/Addons/InterfaceManager.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Vraigos/Fluent-Modded/refs/heads/master/Addons/SaveManager.lua"))()
 
-error("your code is ass💔🙏")
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Veroki/refs/heads/main/Module/DraconicLibBtn.lua"))()
 
-error("your code is ass💔🙏")
 if not getgenv().Fluent then getgenv().Fluent = Fluent end
 
-error("your code is ass💔🙏")
 if not workspace:FindFirstChild("SecurityPart") then
     local SecurityPart = Instance.new("Part")
-    SecurityPart.Na‍me = "SecurityPart"
+    SecurityPart.Name = "SecurityPart"
     SecurityPart.Size = Vector3.new(10, 1, 10)
     SecurityPart.Position = Vector3.new(5000, 5000, 5000)
-    SecurityPart‍.Anchored = true
+    SecurityPart.Anchored = true
     SecurityPart.CanCollide = true
     SecurityPart.Transparency = 1
     SecurityPart.CanTouch = false
     SecurityPart.Parent = workspace
 end
 
-lo‍cal ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-lo‍cal UserInputService = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -99,7 +95,7 @@ local ConfigTab = Window:AddTab({Title = "Configuration",Icon = "save"})
 local ExtensionTab = Window:AddTab({Title = "Extension",Icon = "puzzle"})
 
 if not getgenv().featureStates then getgenv().featureStates = {} end
-getgenv().feature‍States.AntiNextbot = false
+getgenv().featureStates.AntiNextbot = false
 getgenv().featureStates.AntiNextbotTeleportType = "Distance"
 getgenv().featureStates.AntiNextbotDistance = 50
 getgenv().featureStates.DistanceTeleport = 20
@@ -107,7 +103,7 @@ getgenv().featureStates.AntiNextbotSpawn = false
 getgenv().featureStates.AntiNextbotSpawnType = "Spawn"
 getgenv().featureStates.AntiNextbotSpawnDistance = 40
 getgenv().featureStates.AntiNextbotTeleportDistance = 20
-‍
+
 if not getgenv().espObjects then getgenv().espObjects = {} end
 if not getgenv().espThreads then getgenv().espThreads = {} end
 if not getgenv().tracerLines then getgenv().tracerLines = {} end
@@ -3994,6 +3990,3 @@ DraconicBtn:Toggle({Name = "AutoCarryFlag",Text = "Auto Carry",Value = false,Pos
 DraconicBtn:Toggle({Name = "AutoReviveFlag",Text = "Auto Revive",Value = false,Position = "(0.5, -110, 0, 120)",UiScale = 1,Visible = false,Callback = function(state) getgenv().AutoReviveEnabled = state end})
 
 print("Veroki Hub loaded successfully with Fluent UI and DraconicBtn (show toggles added) :] !")
-]]
-
-error("your code is ass💔🙏")
