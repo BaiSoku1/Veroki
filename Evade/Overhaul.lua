@@ -30,9 +30,9 @@ local setfpscap = setfpscap or function(fps)
     end
 end
 
-local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Fluent-Modded/refs/heads/master/Fluent/Main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Fluent-Modded/master/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Fluent-Modded/master/Addons/InterfaceManager.lua"))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/BaiSoku1/Veroki/refs/heads/main/Module/DraconicLibBtn.lua"))()
 
